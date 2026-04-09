@@ -10,10 +10,15 @@ import { createResultStream } from "./llm-provider-interface";
  * Input used to build the request body for the AI SDK provider adapter.
  */
 export interface BuildAiSdkBodyOptions<TMessage = unknown> {
+  /** Chat identifier generated for the current request. */
   chatId: string;
+  /** Active runtime session id, when the request belongs to a persisted session. */
   sessionId?: string;
+  /** Final system prompt prepared by the runtime. */
   systemPrompt: string;
+  /** Provider-native message payload that will be sent to the endpoint. */
   messages: TMessage[];
+  /** Tool definitions made available for the request. */
   tools: LlmToolDefinition[];
 }
 
@@ -21,12 +26,16 @@ export interface BuildAiSdkBodyOptions<TMessage = unknown> {
  * Options for wrapping an HTTP endpoint as a runtime LLM provider.
  */
 export interface CreateAiSdkLlmProviderOptions<TMessage = unknown> {
+  /** Endpoint that accepts a JSON chat completion request. */
   api: string;
+  /** Static or lazily resolved headers sent with every request. */
   headers?:
     | Record<string, string>
     | Headers
     | (() => Record<string, string> | Headers | Promise<Record<string, string> | Headers>);
+  /** Optional fetch implementation, useful in non-browser environments or tests. */
   fetch?: typeof globalThis.fetch;
+  /** Overrides how the outgoing JSON body is constructed. */
   buildBody?: (
     options: BuildAiSdkBodyOptions<TMessage>,
   ) => Promise<Record<string, unknown>> | Record<string, unknown>;
@@ -112,6 +121,11 @@ function getFinalMessageFromEvents(events: Array<AssistantStreamEvent<AssistantM
   return terminalEvent.type === "done" ? terminalEvent.message : terminalEvent.error;
 }
 
+/**
+ * Wraps a JSON-speaking HTTP endpoint as a runtime-compatible LLM provider.
+ * The endpoint is expected to return either an event array, an `{ events, message }` object,
+ * or a final `{ message }` payload that can be normalized into assistant stream events.
+ */
 export function createAiSdkLlmProvider<TMessage = unknown>(
   options: CreateAiSdkLlmProviderOptions<TMessage>,
 ): LlmProvider<AssistantMessage> {

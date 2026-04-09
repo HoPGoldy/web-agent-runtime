@@ -238,11 +238,17 @@ export interface AgentRuntime<THostContext = unknown> {
   setSystemPrompt(prompt: string): void;
   /** Session management helpers exposed by the runtime. */
   sessions: {
+    /** Creates a new session and makes it the active runtime session. */
     create(input?: CreateSessionInput): Promise<SessionRecord>;
+    /** Opens an existing session and rebuilds runtime state from persisted history. */
     open(sessionId: string): Promise<SessionRecord>;
+    /** Lists all persisted sessions from the configured storage backend. */
     list(): Promise<SessionRecord[]>;
+    /** Updates metadata for a persisted session. */
     update(sessionId: string, patch: UpdateSessionInput): Promise<SessionRecord>;
+    /** Deletes a session and any persisted history owned by the backend. */
     delete(sessionId: string): Promise<void>;
+    /** Creates a new session by forking an existing session lineage. */
     fork(input: ForkSessionInput): Promise<ForkSessionResult>;
   };
 }

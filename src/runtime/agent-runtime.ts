@@ -514,6 +514,9 @@ function appendSessionEntryWithMessage(sessionData: RuntimeSessionData, message:
 
 import { appendSessionEntry } from "../session/session-types";
 
+/**
+ * Creates the browser-oriented runtime implementation that powers this SDK.
+ */
 export async function createAgentRuntime<THostContext = unknown, TSessionData = RuntimeSessionData>(
   options: AgentRuntimeOptions<THostContext, TSessionData>,
 ) {

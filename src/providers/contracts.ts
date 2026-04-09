@@ -177,10 +177,15 @@ export interface ToolDefinition<
   inputSchema: JsonSchema;
   /** Executes a single tool call and returns normalized output content. */
   execute(args: {
+    /** Unique id assigned to the current tool call by the runtime. */
     toolCallId: string;
+    /** Parsed tool input matching the declared input schema. */
     input: TInput;
+    /** Runtime context visible to the tool implementation. */
     context: AgentToolExecutionContext<TMessage, THostContext>;
+    /** Abort signal that is cancelled when the run is aborted. */
     signal: AbortSignal;
+    /** Emits partial progress updates while the tool is still running. */
     onUpdate?: (partial: ToolExecutionResult<TDetails>) => void;
   }): Promise<ToolExecutionResult<TDetails>>;
 }

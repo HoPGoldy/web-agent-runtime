@@ -21,8 +21,11 @@ import {
  * Options for creating an IndexedDB-backed storage provider.
  */
 interface IndexedDbAgentStorageOptions {
+  /** IndexedDB database name used to store sessions and serialized session data. */
   dbName: string;
+  /** Database version used for schema upgrades. */
   version?: number;
+  /** Optional runtime logger configuration for storage diagnostics. */
   loggerOptions?: LoggerOptions;
 }
 
@@ -59,18 +62,25 @@ function transactionToPromise(transaction: IDBTransaction) {
   });
 }
 
+/**
+ * Browser storage provider backed by IndexedDB.
+ */
 export class IndexedDbAgentStorage<TSessionData = unknown> implements StorageProvider<TSessionData> {
   private readonly dbName: string;
   private readonly version: number;
   private readonly logger?: RuntimeLogger;
   private dbPromise: Promise<IDBDatabase> | null = null;
 
+  /**
+   * Creates an IndexedDB-backed storage provider suitable for browser runtimes.
+   */
   constructor(options: IndexedDbAgentStorageOptions) {
     this.dbName = options.dbName;
     this.version = options.version ?? 3;
     this.logger = createRuntimeLogger(options.loggerOptions);
   }
 
+  /** Creates and persists a new session record. */
   async createSession(input: CreateSessionInput = {}) {
     traceRuntimeDebug(this.logger, "storage:indexeddb:create-session:start", {
       dbName: this.dbName,
@@ -104,6 +114,7 @@ export class IndexedDbAgentStorage<TSessionData = unknown> implements StoragePro
     return session;
   }
 
+  /** Loads a single session record by id. */
   async getSession(id: string) {
     const db = await this.getDb();
     const transaction = db.transaction(["sessions"], "readonly");
@@ -112,6 +123,7 @@ export class IndexedDbAgentStorage<TSessionData = unknown> implements StoragePro
     return (session ?? null) as SessionRecord | null;
   }
 
+  /** Lists sessions ordered by most recently updated first. */
   async listSessions() {
     const db = await this.getDb();
     const transaction = db.transaction(["sessions"], "readonly");
@@ -120,6 +132,7 @@ export class IndexedDbAgentStorage<TSessionData = unknown> implements StoragePro
     return (sessions as SessionRecord[]).sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
   }
 
+  /** Updates session metadata using optional optimistic concurrency checks. */
   async updateSession(id: string, patch: UpdateSessionInput, options?: MutationOptions) {
     const current = await this.getSession(id);
     if (!current) {
@@ -142,6 +155,7 @@ export class IndexedDbAgentStorage<TSessionData = unknown> implements StoragePro
     return next;
   }
 
+  /** Deletes a session together with its serialized runtime data. */
   async deleteSession(id: string) {
     const db = await this.getDb();
     const transaction = db.transaction(["sessions", "sessionData"], "readwrite");
@@ -150,6 +164,7 @@ export class IndexedDbAgentStorage<TSessionData = unknown> implements StoragePro
     await transactionToPromise(transaction);
   }
 
+  /** Loads serialized runtime data for the given session id. */
   async loadSessionData(sessionId: string) {
     const session = await this.getSession(sessionId);
     if (!session) {
@@ -171,6 +186,7 @@ export class IndexedDbAgentStorage<TSessionData = unknown> implements StoragePro
     } as StoredSessionData<TSessionData>;
   }
 
+  /** Persists serialized runtime data and advances the session revision. */
   async saveSessionData(sessionId: string, data: TSessionData, options?: MutationOptions) {
     const current = await this.getSession(sessionId);
     if (!current) {

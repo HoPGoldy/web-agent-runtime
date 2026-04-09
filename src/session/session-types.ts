@@ -1,12 +1,17 @@
 import type { ModelRef, ThinkingLevel, TokenUsage } from "../providers";
 
+/**
+ * Current schema version used for persisted runtime session data.
+ */
 export const RUNTIME_SESSION_DATA_VERSION = 1;
 
 /**
  * Plain text content block stored in session history.
  */
 export interface TextBlock {
+  /** Discriminator for plain text content. */
   type: "text";
+  /** Text payload shown to the user or model. */
   text: string;
 }
 
@@ -14,8 +19,11 @@ export interface TextBlock {
  * Inline image content stored in session history.
  */
 export interface ImageBlock {
+  /** Discriminator for inline image content. */
   type: "image";
+  /** Image payload encoded as a string, typically base64 or a data URL body. */
   data: string;
+  /** MIME type describing the image payload. */
   mimeType: string;
 }
 
@@ -23,8 +31,11 @@ export interface ImageBlock {
  * Provider reasoning block attached to an assistant message.
  */
 export interface ThinkingBlock {
+  /** Discriminator for reasoning content. */
   type: "thinking";
+  /** Provider-emitted reasoning text. */
   text: string;
+  /** Optional provider signature or verification token for the reasoning block. */
   signature?: string;
 }
 
@@ -32,9 +43,13 @@ export interface ThinkingBlock {
  * Tool call requested by an assistant message.
  */
 export interface ToolCallBlock {
+  /** Discriminator for assistant tool calls. */
   type: "toolCall";
+  /** Stable id for matching the tool call with its result message. */
   id: string;
+  /** Tool name requested by the assistant. */
   name: string;
+  /** Structured arguments supplied for the tool call. */
   arguments: Record<string, unknown>;
 }
 
@@ -57,9 +72,13 @@ export type ToolResultContentBlock = TextBlock | ImageBlock;
  * User-authored message stored in a runtime session.
  */
 export interface UserMessage {
+  /** Identifies this record as a user message. */
   role: "user";
+  /** User-authored content, either plain text or structured blocks. */
   content: string | UserContentBlock[];
+  /** Unix timestamp in milliseconds for when the message was created. */
   timestamp: number;
+  /** Arbitrary host-defined metadata associated with the message. */
   metadata?: Record<string, unknown>;
 }
 
@@ -67,14 +86,23 @@ export interface UserMessage {
  * Assistant response stored in a runtime session.
  */
 export interface AssistantMessage {
+  /** Identifies this record as an assistant message. */
   role: "assistant";
+  /** Structured assistant output blocks, including text, thinking, images, and tool calls. */
   content: AssistantContentBlock[];
+  /** Reason the provider ended generation. */
   stopReason: "stop" | "length" | "toolUse" | "aborted" | "error";
+  /** Provider name that generated the message. */
   provider: string;
+  /** Model id that generated the message. */
   model: string;
+  /** Token usage reported for the assistant response, when available. */
   usage?: TokenUsage;
+  /** Error message associated with a failed or aborted generation, when present. */
   errorMessage?: string;
+  /** Unix timestamp in milliseconds for when the message was finalized. */
   timestamp: number;
+  /** Arbitrary host-defined metadata associated with the message. */
   metadata?: Record<string, unknown>;
 }
 
@@ -82,13 +110,21 @@ export interface AssistantMessage {
  * Message capturing the result of a tool execution.
  */
 export interface ToolResultMessage<TDetails = unknown> {
+  /** Identifies this record as a tool result message. */
   role: "toolResult";
+  /** Tool call id that this result satisfies. */
   toolCallId: string;
+  /** Tool name that produced the result. */
   toolName: string;
+  /** User-visible content emitted by the tool. */
   content: ToolResultContentBlock[];
+  /** Optional structured result details retained for host logic. */
   details?: TDetails;
+  /** Indicates whether the tool result should be treated as an error. */
   isError: boolean;
+  /** Unix timestamp in milliseconds for when the result was recorded. */
   timestamp: number;
+  /** Arbitrary host-defined metadata associated with the result. */
   metadata?: Record<string, unknown>;
 }
 
@@ -96,12 +132,19 @@ export interface ToolResultMessage<TDetails = unknown> {
  * Host-defined custom message stored alongside normal conversation messages.
  */
 export interface CustomMessage<TType extends string = string, TDetails = unknown> {
+  /** Identifies this record as a host-defined custom message. */
   role: "custom";
+  /** Application-defined custom subtype. */
   customType: TType;
+  /** Content rendered or stored for the custom message. */
   content: string | UserContentBlock[];
+  /** Optional structured details retained for host logic. */
   details?: TDetails;
+  /** Whether the custom message should be shown in user-facing transcripts. */
   display?: boolean;
+  /** Unix timestamp in milliseconds for when the message was created. */
   timestamp: number;
+  /** Arbitrary host-defined metadata associated with the message. */
   metadata?: Record<string, unknown>;
 }
 
@@ -114,8 +157,11 @@ export type AgentMessage = UserMessage | AssistantMessage | ToolResultMessage | 
  * Common fields shared by all session entries.
  */
 export interface SessionEntryBase {
+  /** Stable identifier for the session entry. */
   id: string;
+  /** Parent entry id in the branch lineage, or null for the root entry. */
   parentId: string | null;
+  /** ISO 8601 timestamp for when the entry was created. */
   timestamp: string;
 }
 
@@ -123,7 +169,9 @@ export interface SessionEntryBase {
  * Session entry that appends a conversation message.
  */
 export interface MessageEntry extends SessionEntryBase {
+  /** Discriminator for a conversation message entry. */
   type: "message";
+  /** Message appended by this session entry. */
   message: AgentMessage;
 }
 
@@ -131,8 +179,11 @@ export interface MessageEntry extends SessionEntryBase {
  * Session entry that records a model selection change.
  */
 export interface ModelChangeEntry extends SessionEntryBase {
+  /** Discriminator for a model selection change entry. */
   type: "model_change";
+  /** Provider selected after this entry. */
   provider: string;
+  /** Model id selected after this entry. */
   modelId: string;
 }
 
@@ -140,7 +191,9 @@ export interface ModelChangeEntry extends SessionEntryBase {
  * Session entry that records a reasoning level change.
  */
 export interface ThinkingLevelChangeEntry extends SessionEntryBase {
+  /** Discriminator for a reasoning level change entry. */
   type: "thinking_level_change";
+  /** Reasoning level selected after this entry. */
   thinkingLevel: ThinkingLevel;
 }
 
@@ -148,10 +201,15 @@ export interface ThinkingLevelChangeEntry extends SessionEntryBase {
  * Session entry that replaces older history with a compacted summary.
  */
 export interface CompactionEntry<TDetails = unknown> extends SessionEntryBase {
+  /** Discriminator for a compaction summary entry. */
   type: "compaction";
+  /** Summary text retained in place of older history. */
   summary: string;
+  /** First historical entry that was preserved after compaction. */
   firstKeptEntryId: string;
+  /** Approximate token count or text budget before compaction. */
   tokensBefore: number;
+  /** Optional host-defined details about the compaction operation. */
   details?: TDetails;
 }
 
@@ -159,9 +217,13 @@ export interface CompactionEntry<TDetails = unknown> extends SessionEntryBase {
  * Session entry that records a summary for a forked branch.
  */
 export interface BranchSummaryEntry<TDetails = unknown> extends SessionEntryBase {
+  /** Discriminator for a branch summary entry. */
   type: "branch_summary";
+  /** Entry id from which the summarized branch diverged. */
   fromId: string;
+  /** Summary text describing the summarized branch. */
   summary: string;
+  /** Optional host-defined details about the branch summary. */
   details?: TDetails;
 }
 
@@ -169,8 +231,11 @@ export interface BranchSummaryEntry<TDetails = unknown> extends SessionEntryBase
  * Session entry for host-owned data that should follow the branch lineage.
  */
 export interface HostDataEntry<TData = unknown> extends SessionEntryBase {
+  /** Discriminator for a host-owned data entry. */
   type: "host_data";
+  /** Application-defined key for the stored host data. */
   key: string;
+  /** Optional host-defined payload that should follow session branching. */
   data?: TData;
 }
 
@@ -189,9 +254,13 @@ export type SessionEntry =
  * Persisted data model for a runtime session branch.
  */
 export interface RuntimeSessionData {
+  /** Schema version for the serialized runtime session payload. */
   version: number;
+  /** Current branch head entry id, or null for an empty session. */
   headEntryId: string | null;
+  /** All session entries known to the runtime. */
   entries: SessionEntry[];
+  /** Optional metadata associated with the runtime session payload itself. */
   metadata?: Record<string, unknown>;
 }
 
@@ -199,9 +268,13 @@ export interface RuntimeSessionData {
  * Materialized view of a runtime session at a specific head entry.
  */
 export interface RuntimeSessionView {
+  /** Materialized message list visible at the selected head entry. */
   messages: AgentMessage[];
+  /** Effective model selection at the selected head entry. */
   model: ModelRef;
+  /** Effective reasoning level at the selected head entry. */
   thinkingLevel: ThinkingLevel;
+  /** Head entry id that produced this view. */
   headEntryId: string | null;
 }
 

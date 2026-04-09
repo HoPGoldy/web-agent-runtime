@@ -6,8 +6,14 @@ import {
   type RuntimeSessionData,
 } from "./session-types";
 
+/**
+ * Current persisted runtime session data version understood by the default JSON codec.
+ */
 export const SESSION_DATA_VERSION = RUNTIME_SESSION_DATA_VERSION;
 
+/**
+ * Creates the default pass-through codec for JSON-serializable runtime session data.
+ */
 export function createJsonSessionDataCodec(): SessionDataCodec<RuntimeSessionData, RuntimeSessionData> {
   return {
     async serialize(data) {
