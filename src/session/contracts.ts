@@ -48,9 +48,5 @@ export interface StorageProvider<TSessionData = unknown> {
   ): Promise<SessionRecord>;
   deleteSession(sessionId: string): Promise<void>;
   loadSessionData(sessionId: string): Promise<StoredSessionData<TSessionData> | null>;
-  saveSessionData(
-    sessionId: string,
-    data: TSessionData,
-    options?: MutationOptions,
-  ): Promise<CommitResult>;
+  saveSessionData(sessionId: string, data: TSessionData, options?: MutationOptions): Promise<CommitResult>;
 }

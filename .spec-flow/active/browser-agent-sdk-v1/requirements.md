@@ -117,21 +117,21 @@
 
 ## 追踪矩阵
 
-| 需求 | 验收标准 | 测试用例 |
-|------|----------|----------|
-| FR-001, FR-011 | AC-001 | TC-001 Runtime 创建与 prompt 流程 |
-| FR-013 | AC-002 | TC-010 Steering 投递顺序 |
-| FR-014 | AC-003 | TC-011 Follow-up 投递顺序 |
-| FR-015, FR-017 | AC-006 | TC-020 Compaction 持久化与重建 |
-| FR-016 | AC-005 | TC-030 Forked session 创建 |
-| FR-030, FR-033 | AC-010, AC-011 | TC-040 Storage 冲突与 codec 失败 |
-| NFR-050 | AC-021 | TC-090 TDD 任务审计 |
+| 需求           | 验收标准       | 测试用例                          |
+| -------------- | -------------- | --------------------------------- |
+| FR-001, FR-011 | AC-001         | TC-001 Runtime 创建与 prompt 流程 |
+| FR-013         | AC-002         | TC-010 Steering 投递顺序          |
+| FR-014         | AC-003         | TC-011 Follow-up 投递顺序         |
+| FR-015, FR-017 | AC-006         | TC-020 Compaction 持久化与重建    |
+| FR-016         | AC-005         | TC-030 Forked session 创建        |
+| FR-030, FR-033 | AC-010, AC-011 | TC-040 Storage 冲突与 codec 失败  |
+| NFR-050        | AC-021         | TC-090 TDD 任务审计               |
 
 ## 术语表
 
-| 术语 | 定义 |
-|------|------|
-| Runtime Session Graph | runtime 内部维护的强类型 session 结构，用于 fork、compaction 和 context rebuild |
-| Opaque Session Document | storage provider 持久化的 session data blob，本身不要求理解运行时语义 |
-| Steering | 当前 turn 完成 tool execution 后、下一次模型调用前插入的消息 |
-| Follow-up | agent 原本准备停止时才投递的消息 |
+| 术语                    | 定义                                                                            |
+| ----------------------- | ------------------------------------------------------------------------------- |
+| Runtime Session Graph   | runtime 内部维护的强类型 session 结构，用于 fork、compaction 和 context rebuild |
+| Opaque Session Document | storage provider 持久化的 session data blob，本身不要求理解运行时语义           |
+| Steering                | 当前 turn 完成 tool execution 后、下一次模型调用前插入的消息                    |
+| Follow-up               | agent 原本准备停止时才投递的消息                                                |

@@ -71,7 +71,9 @@ export interface LlmStreamRequest<TMessage = unknown> {
 }
 
 export interface LlmProvider<TMessage = unknown> {
-  stream(request: LlmStreamRequest<TMessage>): Promise<ResultStream<AssistantStreamEvent<TMessage>, TMessage>>;
+  stream(
+    request: LlmStreamRequest<TMessage>,
+  ): Promise<ResultStream<AssistantStreamEvent<TMessage>, TMessage>>;
 }
 
 export interface ToolExecutionResult<TDetails = unknown> {

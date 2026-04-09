@@ -167,7 +167,7 @@ interface SessionDataCodec<TSessionData = unknown> {
 ```ts
 async function createAgentRuntime<THostContext = unknown, TSessionData = RuntimeSessionData>(
   options: AgentRuntimeOptions<THostContext, TSessionData>,
-): Promise<AgentRuntime<THostContext>>
+): Promise<AgentRuntime<THostContext>>;
 ```
 
 **输入**:
@@ -239,23 +239,23 @@ erDiagram
 
 ### SessionRecord 结构
 
-| 字段 | 类型 | 约束 | 说明 |
-|------|------|------|------|
-| id | string | PK, NOT NULL | session 唯一标识 |
-| title | string | NULLABLE | session 展示名称 |
-| revision | string | NOT NULL | 当前持久化版本号 |
-| createdAt | ISO string | NOT NULL | 创建时间 |
-| updatedAt | ISO string | NOT NULL | 最近更新时间 |
-| metadata | object | NULLABLE | session 元数据 |
+| 字段      | 类型       | 约束         | 说明             |
+| --------- | ---------- | ------------ | ---------------- |
+| id        | string     | PK, NOT NULL | session 唯一标识 |
+| title     | string     | NULLABLE     | session 展示名称 |
+| revision  | string     | NOT NULL     | 当前持久化版本号 |
+| createdAt | ISO string | NOT NULL     | 创建时间         |
+| updatedAt | ISO string | NOT NULL     | 最近更新时间     |
+| metadata  | object     | NULLABLE     | session 元数据   |
 
 ### RuntimeSessionData 结构
 
-| 字段 | 类型 | 约束 | 说明 |
-|------|------|------|------|
-| version | number | NOT NULL | runtime session data schema 版本 |
-| headEntryId | string\|null | NOT NULL | 当前分支 head entry |
-| entries | SessionEntry[] | NOT NULL | runtime 内部 graph |
-| metadata | object | NULLABLE | 仅 runtime 自用的数据 |
+| 字段        | 类型           | 约束     | 说明                             |
+| ----------- | -------------- | -------- | -------------------------------- |
+| version     | number         | NOT NULL | runtime session data schema 版本 |
+| headEntryId | string\|null   | NOT NULL | 当前分支 head entry              |
+| entries     | SessionEntry[] | NOT NULL | runtime 内部 graph               |
+| metadata    | object         | NULLABLE | 仅 runtime 自用的数据            |
 
 ## 状态机
 
@@ -316,13 +316,13 @@ sequenceDiagram
 
 ## 错误处理
 
-| 错误码 | 作用域 | 说明 | 处理方式 |
-|--------|--------|------|----------|
-| ERR_STORAGE_CONFLICT | Storage | revision 冲突导致写入被拒绝 | 由 runtime 向上抛出或走重试/刷新策略 |
-| ERR_SESSION_CODEC | Session | session data 编解码失败 | 停止当前打开流程，避免覆盖已有数据 |
-| ERR_LLM_STREAM | LLM | provider 返回无效终止事件或流中断 | 将 runtime 从 streaming 状态恢复为 error 或 ready |
-| ERR_TOOL_ABORTED | Tool | tool 被 abort 或宿主拒绝执行 | 作为错误 tool result 处理 |
-| ERR_INVALID_CONTINUE | Runtime | 非法 continue 调用 | 直接拒绝并保留现有状态 |
+| 错误码               | 作用域  | 说明                              | 处理方式                                          |
+| -------------------- | ------- | --------------------------------- | ------------------------------------------------- |
+| ERR_STORAGE_CONFLICT | Storage | revision 冲突导致写入被拒绝       | 由 runtime 向上抛出或走重试/刷新策略              |
+| ERR_SESSION_CODEC    | Session | session data 编解码失败           | 停止当前打开流程，避免覆盖已有数据                |
+| ERR_LLM_STREAM       | LLM     | provider 返回无效终止事件或流中断 | 将 runtime 从 streaming 状态恢复为 error 或 ready |
+| ERR_TOOL_ABORTED     | Tool    | tool 被 abort 或宿主拒绝执行      | 作为错误 tool result 处理                         |
+| ERR_INVALID_CONTINUE | Runtime | 非法 continue 调用                | 直接拒绝并保留现有状态                            |
 
 ### 错误对象结构
 
