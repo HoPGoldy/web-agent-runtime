@@ -249,16 +249,14 @@ export class AgentLoopEngine<THostContext = unknown> {
       signal,
     });
     traceRuntimeDebug(this.bindings.logger, "loop:runTurn:llm-provider:done");
-    traceRuntimeDebug(this.bindings.logger, "loop:runTurn:stream-result:start");
-    let assistantMessage = (await stream.result()) as AssistantMessage;
-    traceRuntimeDebug(this.bindings.logger, "loop:runTurn:stream-result:done", {
-      stopReason: assistantMessage.stopReason,
-      contentBlocks: assistantMessage.content.length,
-    });
+    let assistantMessage: AssistantMessage | null = null;
 
     for await (const event of stream) {
-      if (event.type === "start") {
+      if ("partial" in event) {
         this.bindings.setStreamMessage(event.partial as AssistantMessage);
+      }
+
+      if (event.type === "start") {
         this.bindings.emit({
           type: "message_start",
           message: event.partial as AssistantMessage,
@@ -279,6 +277,15 @@ export class AgentLoopEngine<THostContext = unknown> {
           ("message" in event ? event.message : undefined) ??
           ("error" in event ? event.error : assistantMessage)) as AgentMessage,
         assistantEvent: event,
+      });
+    }
+
+    if (!assistantMessage) {
+      traceRuntimeDebug(this.bindings.logger, "loop:runTurn:stream-result:start");
+      assistantMessage = (await stream.result()) as AssistantMessage;
+      traceRuntimeDebug(this.bindings.logger, "loop:runTurn:stream-result:done", {
+        stopReason: assistantMessage.stopReason,
+        contentBlocks: assistantMessage.content.length,
       });
     }
 

@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createAgentRuntime } from "../src/runtime/agent-runtime";
+import type { LlmProvider } from "../src/providers";
+import type { AssistantMessage } from "../src/session/session-types";
 import type { RuntimeSessionData } from "../src/session/session-types";
 import { IndexedDbAgentStorage } from "../src/storage/indexed-db-agent-storage";
 import {
@@ -10,6 +12,66 @@ import {
 
 function createStorage(name: string) {
   return new IndexedDbAgentStorage<RuntimeSessionData>({ dbName: name });
+}
+
+function readAssistantText(message: AssistantMessage | null) {
+  if (!message) {
+    return null;
+  }
+
+  return message.content
+    .flatMap((block) => (block.type === "text" ? [block.text] : []))
+    .join("")
+    .trim();
+}
+
+function createStreamingLlmProvider(text: string): LlmProvider<AssistantMessage> {
+  const finalMessage = createAssistantTextMessage(text, 3);
+  const startMessage: AssistantMessage = {
+    ...finalMessage,
+    content: [],
+    timestamp: 1,
+  };
+  const emptyTextMessage: AssistantMessage = {
+    ...finalMessage,
+    content: [{ type: "text", text: "" }],
+    timestamp: 2,
+  };
+  const partialMessage: AssistantMessage = {
+    ...finalMessage,
+    content: [{ type: "text", text }],
+    timestamp: 2,
+  };
+
+  return {
+    async stream() {
+      let iterationStarted = false;
+
+      return {
+        async *[Symbol.asyncIterator]() {
+          iterationStarted = true;
+          yield { type: "start", partial: startMessage };
+          yield { type: "text_start", contentIndex: 0, partial: emptyTextMessage };
+          yield { type: "text_delta", contentIndex: 0, delta: text, partial: partialMessage };
+          yield { type: "text_end", contentIndex: 0, content: text, partial: partialMessage };
+          yield { type: "done", message: finalMessage, reason: finalMessage.stopReason };
+        },
+        result() {
+          const thenable: PromiseLike<AssistantMessage> = {
+            then(onFulfilled, onRejected) {
+              if (!iterationStarted) {
+                throw new Error("result awaited before stream iteration started");
+              }
+
+              return Promise.resolve(finalMessage).then(onFulfilled, onRejected);
+            },
+          };
+
+          return thenable as Promise<AssistantMessage>;
+        },
+      };
+    },
+  };
 }
 
 describe("agent runtime", () => {
@@ -72,5 +134,30 @@ describe("agent runtime", () => {
 
     expect(runtimeB.state.messages).toEqual(runtimeA.state.messages);
     expect(runtimeB.state.session?.id).toBe(runtimeA.state.session?.id);
+  });
+
+  it("streams partial assistant updates before committing the final message", async () => {
+    const runtime = await createAgentRuntime({
+      model: { provider: "proxy", id: "claude-test" },
+      llmProvider: createStreamingLlmProvider("streamed"),
+      storage: createStorage(`agent-runtime-stream-${crypto.randomUUID()}`),
+      tools: createStaticTools([]),
+      systemPrompt: "System prompt",
+    });
+    const streamedTexts: string[] = [];
+
+    runtime.subscribe((event) => {
+      if (event.type === "state_changed") {
+        const text = readAssistantText(event.state.streamMessage);
+        if (text) {
+          streamedTexts.push(text);
+        }
+      }
+    });
+
+    await runtime.prompt("hello");
+
+    expect(streamedTexts).toContain("streamed");
+    expect(runtime.state.messages.at(-1)).toEqual(createAssistantTextMessage("streamed", 3));
   });
 });

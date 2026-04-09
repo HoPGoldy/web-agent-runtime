@@ -170,6 +170,7 @@ The package exposes a single runtime-first surface:
 
 Optional helpers remain available for AI SDK interop and stream testing:
 
+- `createOpenAiCompatibleLlmProvider` for direct browser-side validation against trusted OpenAI-compatible chat endpoints
 - `createAiSdkToolSet`
 - `createResultStream`
 

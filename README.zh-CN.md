@@ -170,6 +170,7 @@ await runtime.prompt("Find the latest PTO policy and summarize it.");
 
 同时保留少量 AI SDK 互操作辅助函数：
 
+- `createOpenAiCompatibleLlmProvider`，用于直接对接可信的 OpenAI-compatible Chat endpoint 做本地验证
 - `createAiSdkToolSet`
 - `createResultStream`
 

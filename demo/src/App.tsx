@@ -1,6 +1,7 @@
 import { startTransition, useDeferredValue, useEffect, useEffectEvent, useRef, useState } from "react";
 import {
   createAgentRuntime,
+  createOpenAiCompatibleLlmProvider,
   IndexedDbAgentStorage,
   type AgentRuntime,
   type RuntimeEvent,
@@ -14,7 +15,6 @@ import {
   formatClock,
   summarizeRuntimeEvent,
 } from "./lib/formatters";
-import { createOpenAiLlmProvider } from "./lib/openai-provider";
 import { createSnapshot, createTextareaTools, type TextSelection } from "./lib/textarea-tools";
 
 const DEFAULT_PROMPT = "先读取文本框，再把它改写成更清晰的版本，并说明你做了哪些编辑。";
@@ -136,7 +136,7 @@ export default function App() {
           provider: "openai",
           id: DEFAULT_MODEL,
         },
-        llmProvider: createOpenAiLlmProvider({
+        llmProvider: createOpenAiCompatibleLlmProvider({
           apiKey: OPENAI_KEY,
           baseUrl: OPENAI_BASE_URL || undefined,
         }),
