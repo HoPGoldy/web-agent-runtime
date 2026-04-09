@@ -14,15 +14,21 @@ import type {
   StorageProvider,
   UpdateSessionInput,
 } from "../session";
+import type {
+  AgentMessage,
+  AssistantMessage,
+} from "../session/session-types";
 
-export type PromptInput = string | unknown | unknown[];
+export type PromptInput = string | AgentMessage | AgentMessage[];
 
 export type TransformContext = (
-  messages: unknown[],
+  messages: AgentMessage[],
   signal?: AbortSignal,
-) => Promise<unknown[]> | unknown[];
+) => Promise<AgentMessage[]> | AgentMessage[];
 
-export type ConvertToLlm = (messages: unknown[]) => Promise<unknown[]> | unknown[];
+export type ConvertToLlm = (
+  messages: AgentMessage[],
+) => Promise<unknown[]> | unknown[];
 
 export interface ForkSessionInput {
   sourceSessionId: string;
@@ -53,11 +59,11 @@ export interface RuntimeState {
   model: ModelRef;
   thinkingLevel: ThinkingLevel;
   systemPrompt: string;
-  messages: unknown[];
-  streamMessage: unknown | null;
+  messages: AgentMessage[];
+  streamMessage: AssistantMessage | null;
   pendingToolCallIds: string[];
-  queuedSteeringMessages: unknown[];
-  queuedFollowUpMessages: unknown[];
+  queuedSteeringMessages: AgentMessage[];
+  queuedFollowUpMessages: AgentMessage[];
   error?: string;
 }
 
@@ -67,14 +73,19 @@ export type RuntimeEvent =
   | { type: "session_created"; session: SessionRecord }
   | { type: "session_updated"; session: SessionRecord }
   | { type: "session_deleted"; sessionId: string }
-  | { type: "session_forked"; session: SessionRecord; sourceSessionId: string; fromEntryId?: string | null }
+  | {
+      type: "session_forked";
+      session: SessionRecord;
+      sourceSessionId: string;
+      fromEntryId?: string | null;
+    }
   | { type: "agent_start" }
-  | { type: "agent_end"; messages: unknown[] }
+  | { type: "agent_end"; messages: AgentMessage[] }
   | { type: "turn_start" }
-  | { type: "turn_end"; message: unknown; toolResults: ToolExecutionResult[] }
-  | { type: "message_start"; message: unknown }
-  | { type: "message_update"; message: unknown; assistantEvent: unknown }
-  | { type: "message_end"; message: unknown }
+  | { type: "turn_end"; message: AgentMessage; toolResults: ToolExecutionResult[] }
+  | { type: "message_start"; message: AgentMessage }
+  | { type: "message_update"; message: AgentMessage; assistantEvent: unknown }
+  | { type: "message_end"; message: AgentMessage }
   | { type: "tool_execution_start"; toolCallId: string; toolName: string; args: unknown }
   | {
       type: "tool_execution_update";
@@ -106,7 +117,7 @@ export interface AfterToolCallResult {
 }
 
 export interface BeforeToolCallContext<THostContext = unknown> {
-  assistantMessage: unknown;
+  assistantMessage: AssistantMessage;
   toolCall: unknown;
   args: unknown;
   runtimeState: RuntimeState;
@@ -114,7 +125,7 @@ export interface BeforeToolCallContext<THostContext = unknown> {
 }
 
 export interface AfterToolCallContext<THostContext = unknown> {
-  assistantMessage: unknown;
+  assistantMessage: AssistantMessage;
   toolCall: unknown;
   args: unknown;
   result: ToolExecutionResult;
@@ -150,7 +161,7 @@ export interface AgentRuntimeOptions<THostContext = unknown, TSessionData = unkn
   model: ModelRef;
   llmProvider: LlmProvider<unknown>;
   storage: StorageProvider<TSessionData>;
-  sessionDataCodec?: SessionDataCodec<TSessionData>;
+  sessionDataCodec?: SessionDataCodec<TSessionData, unknown>;
   toolProvider: ToolProvider<RuntimeState, unknown, THostContext>;
   systemPrompt?: string;
   promptComposer?: PromptComposer<RuntimeState, unknown, THostContext>;
@@ -168,7 +179,3 @@ export interface AgentRuntimeOptions<THostContext = unknown, TSessionData = unkn
     signal?: AbortSignal,
   ) => Promise<AfterToolCallResult | undefined>;
 }
-
-export declare function createAgentRuntime<THostContext = unknown, TSessionData = unknown>(
-  options: AgentRuntimeOptions<THostContext, TSessionData>,
-): Promise<AgentRuntime<THostContext>>;

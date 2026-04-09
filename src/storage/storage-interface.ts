@@ -1,19 +1,30 @@
 import type { UIMessage } from "ai";
 import type {
-  AgentSession,
-  AgentSessionCreateInput,
-  AgentSessionUpdateInput,
-} from "../types";
+  CommitResult,
+  MutationOptions,
+  SessionRecord,
+  StorageProvider,
+  UpdateSessionInput,
+} from "../session";
+import type { AgentSessionCreateInput } from "../types";
 
-export interface StorageInterface<UI_MESSAGE extends UIMessage = UIMessage> {
-  createSession(input?: AgentSessionCreateInput): Promise<AgentSession>;
-  getSession(id: string): Promise<AgentSession | null>;
-  listSessions(): Promise<AgentSession[]>;
+export interface StorageInterface<UI_MESSAGE extends UIMessage = UIMessage>
+  extends Omit<
+    StorageProvider<UI_MESSAGE[]>,
+    "createSession" | "getSession" | "listSessions" | "updateSession"
+  > {
+  createSession(input?: AgentSessionCreateInput): Promise<SessionRecord>;
+  getSession(id: string): Promise<SessionRecord | null>;
+  listSessions(): Promise<SessionRecord[]>;
   updateSession(
     id: string,
-    patch: AgentSessionUpdateInput,
-  ): Promise<AgentSession>;
-  deleteSession(id: string): Promise<void>;
+    patch: UpdateSessionInput,
+    options?: MutationOptions,
+  ): Promise<SessionRecord>;
   loadMessages(id: string): Promise<UI_MESSAGE[]>;
-  saveMessages(id: string, messages: UI_MESSAGE[]): Promise<void>;
+  saveMessages(
+    id: string,
+    messages: UI_MESSAGE[],
+    options?: MutationOptions,
+  ): Promise<void | CommitResult>;
 }

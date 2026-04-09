@@ -1,11 +1,14 @@
 import type { UIMessage } from "ai";
-import {
-  createAgentId,
-  type AgentSession,
-  type AgentSessionCreateInput,
-  type AgentSessionUpdateInput,
-} from "../types";
-import type { StorageInterface } from "./storage-interface";
+import { createAgentId, type AgentSessionCreateInput } from "../types";
+import type {
+  CommitResult,
+  CreateSessionInput,
+  MutationOptions,
+  SessionRecord,
+  StoredSessionData,
+  StorageProvider,
+  UpdateSessionInput,
+} from "../session";
 
 interface IndexedDbAgentStorageOptions {
   dbName: string;
@@ -15,6 +18,24 @@ interface IndexedDbAgentStorageOptions {
 interface StoredMessages<UI_MESSAGE extends UIMessage> {
   sessionId: string;
   messages: UI_MESSAGE[];
+}
+
+interface StoredOpaqueSessionData<TSessionData = unknown> {
+  sessionId: string;
+  data: TSessionData;
+}
+
+function createRevision() {
+  return `${Date.now()}-${createAgentId()}`;
+}
+
+function assertRevision(session: SessionRecord, options?: MutationOptions) {
+  if (
+    options?.expectedRevision !== undefined &&
+    session.revision !== options.expectedRevision
+  ) {
+    throw new Error(`Revision conflict for session: ${session.id}`);
+  }
 }
 
 function requestToPromise<T>(request: IDBRequest<T>) {
@@ -34,23 +55,27 @@ function transactionToPromise(transaction: IDBTransaction) {
 
 export class IndexedDbAgentStorage<
   UI_MESSAGE extends UIMessage = UIMessage,
-> implements StorageInterface<UI_MESSAGE> {
+  TSessionData = UI_MESSAGE[],
+> implements StorageProvider<TSessionData> {
   private readonly dbName: string;
   private readonly version: number;
   private dbPromise: Promise<IDBDatabase> | null = null;
 
   constructor(options: IndexedDbAgentStorageOptions) {
     this.dbName = options.dbName;
-    this.version = options.version ?? 1;
+    this.version = options.version ?? 2;
   }
 
-  async createSession(input: AgentSessionCreateInput = {}) {
+  async createSession(input: AgentSessionCreateInput | CreateSessionInput = {}) {
     const now = new Date().toISOString();
-    const session: AgentSession = {
+    const metadata = "metadata" in input ? input.metadata : undefined;
+    const session: SessionRecord = {
       id: input.id ?? createAgentId(),
       title: input.title ?? "Untitled Session",
       createdAt: now,
       updatedAt: now,
+      revision: createRevision(),
+      metadata,
     };
 
     const db = await this.getDb();
@@ -67,7 +92,7 @@ export class IndexedDbAgentStorage<
       transaction.objectStore("sessions").get(id),
     );
     await transactionToPromise(transaction);
-    return (session ?? null) as AgentSession | null;
+    return (session ?? null) as SessionRecord | null;
   }
 
   async listSessions() {
@@ -77,21 +102,28 @@ export class IndexedDbAgentStorage<
       transaction.objectStore("sessions").getAll(),
     );
     await transactionToPromise(transaction);
-    return (sessions as AgentSession[]).sort((left, right) =>
+    return (sessions as SessionRecord[]).sort((left, right) =>
       right.updatedAt.localeCompare(left.updatedAt),
     );
   }
 
-  async updateSession(id: string, patch: AgentSessionUpdateInput) {
+  async updateSession(
+    id: string,
+    patch: UpdateSessionInput,
+    options?: MutationOptions,
+  ) {
     const current = await this.getSession(id);
     if (!current) {
       throw new Error(`Session not found: ${id}`);
     }
 
-    const next: AgentSession = {
+    assertRevision(current, options);
+
+    const next: SessionRecord = {
       ...current,
       ...patch,
-      updatedAt: patch.updatedAt ?? new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      revision: createRevision(),
     };
 
     const db = await this.getDb();
@@ -103,10 +135,72 @@ export class IndexedDbAgentStorage<
 
   async deleteSession(id: string) {
     const db = await this.getDb();
-    const transaction = db.transaction(["sessions", "messages"], "readwrite");
+    const transaction = db.transaction(
+      ["sessions", "messages", "sessionData"],
+      "readwrite",
+    );
     transaction.objectStore("sessions").delete(id);
     transaction.objectStore("messages").delete(id);
+    transaction.objectStore("sessionData").delete(id);
     await transactionToPromise(transaction);
+  }
+
+  async loadSessionData(sessionId: string) {
+    const session = await this.getSession(sessionId);
+    if (!session) {
+      return null;
+    }
+
+    const db = await this.getDb();
+    const transaction = db.transaction(["sessionData"], "readonly");
+    const record = await requestToPromise(
+      transaction.objectStore("sessionData").get(sessionId),
+    );
+    await transactionToPromise(transaction);
+    const stored = record as StoredOpaqueSessionData<TSessionData> | undefined;
+    if (!stored) {
+      return null;
+    }
+
+    return {
+      session,
+      data: stored.data,
+    } as StoredSessionData<TSessionData>;
+  }
+
+  async saveSessionData(
+    sessionId: string,
+    data: TSessionData,
+    options?: MutationOptions,
+  ) {
+    const current = await this.getSession(sessionId);
+    if (!current) {
+      throw new Error(`Session not found: ${sessionId}`);
+    }
+
+    assertRevision(current, options);
+
+    const nextSession: SessionRecord = {
+      ...current,
+      updatedAt: new Date().toISOString(),
+      revision: createRevision(),
+    };
+    const db = await this.getDb();
+    const transaction = db.transaction(
+      ["sessions", "sessionData"],
+      "readwrite",
+    );
+    transaction.objectStore("sessions").put(nextSession);
+    transaction.objectStore("sessionData").put({
+      sessionId,
+      data,
+    } satisfies StoredOpaqueSessionData<TSessionData>);
+    await transactionToPromise(transaction);
+
+    return {
+      session: nextSession,
+      revision: nextSession.revision,
+    } satisfies CommitResult;
   }
 
   async loadMessages(id: string) {
@@ -120,14 +214,17 @@ export class IndexedDbAgentStorage<
       []) as UI_MESSAGE[];
   }
 
-  async saveMessages(id: string, messages: UI_MESSAGE[]) {
+  async saveMessages(
+    id: string,
+    messages: UI_MESSAGE[],
+    _options?: MutationOptions,
+  ) {
     const db = await this.getDb();
     const transaction = db.transaction(["messages"], "readwrite");
-    const payload: StoredMessages<UI_MESSAGE> = {
+    transaction.objectStore("messages").put({
       sessionId: id,
       messages,
-    };
-    transaction.objectStore("messages").put(payload);
+    } satisfies StoredMessages<UI_MESSAGE>);
     await transactionToPromise(transaction);
   }
 
@@ -143,6 +240,9 @@ export class IndexedDbAgentStorage<
           }
           if (!db.objectStoreNames.contains("messages")) {
             db.createObjectStore("messages", { keyPath: "sessionId" });
+          }
+          if (!db.objectStoreNames.contains("sessionData")) {
+            db.createObjectStore("sessionData", { keyPath: "sessionId" });
           }
         };
 

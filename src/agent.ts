@@ -5,12 +5,14 @@ import {
 import { RuntimeChat } from "./runtime-chat";
 import type { LlmCallInterface } from "./llm/llm-call-interface";
 import type { StorageInterface } from "./storage/storage-interface";
+import type { SessionRecord } from "./session";
 import type {
   ToolInterface,
   ToolExecutionContext,
 } from "./tools/tool-interface";
 import {
   type AgentEvent,
+  type AgentSession,
   type AgentSessionCreateInput,
   type AgentSessionOpenOptions,
   type AgentSessionUpdateInput,
@@ -69,7 +71,9 @@ export class Agent<UI_MESSAGE extends UIMessage = UIMessage> {
   readonly sessions = {
     create: async (input: AgentSessionCreateInput = {}) => {
       this.ensureNotDestroyed();
-      const session = await this.storage.createSession(input);
+      const session = this.toAgentSession(
+        await this.storage.createSession(input),
+      );
       this.emit({ type: "session-created", session });
       return session;
     },
@@ -89,7 +93,10 @@ export class Agent<UI_MESSAGE extends UIMessage = UIMessage> {
           id,
           title: options.title ?? this.initialSessionTitle,
         });
-        this.emit({ type: "session-created", session });
+        this.emit({
+          type: "session-created",
+          session: this.toAgentSession(session),
+        });
       }
 
       if (!session) {
@@ -97,17 +104,20 @@ export class Agent<UI_MESSAGE extends UIMessage = UIMessage> {
       }
 
       const messages = await this.storage.loadMessages(id);
+      const nextSession = this.toAgentSession(session);
       this.pendingSessionId = id;
-      this._state.session = session;
+      this._state.session = nextSession;
       this._state.isInitialized = true;
       this.chat.replaceAllMessages(messages);
       this.syncState();
-      this.emit({ type: "session-opened", session });
-      return session;
+      this.emit({ type: "session-opened", session: nextSession });
+      return nextSession;
     },
     update: async (id: string, patch: AgentSessionUpdateInput) => {
       this.ensureNotDestroyed();
-      const session = await this.storage.updateSession(id, patch);
+      const session = this.toAgentSession(
+        await this.storage.updateSession(id, patch),
+      );
       if (this._state.session?.id === id) {
         this._state.session = session;
         this.emitStateChanged();
@@ -399,14 +409,23 @@ export class Agent<UI_MESSAGE extends UIMessage = UIMessage> {
     this.persistChain = this.persistChain
       .then(async () => {
         await this.storage.saveMessages(sessionId, messages);
-        const nextSession = await this.storage.updateSession(sessionId, {
-          updatedAt: new Date().toISOString(),
-        });
+        const nextSession = this.toAgentSession(
+          await this.storage.updateSession(sessionId, {}),
+        );
         if (this._state.session?.id === sessionId) {
           this._state.session = nextSession;
         }
       })
       .catch(() => undefined);
+  }
+
+  private toAgentSession(session: SessionRecord): AgentSession {
+    return {
+      id: session.id,
+      title: session.title ?? this.initialSessionTitle,
+      createdAt: session.createdAt,
+      updatedAt: session.updatedAt,
+    };
   }
 
   private resetToolAbortController() {
