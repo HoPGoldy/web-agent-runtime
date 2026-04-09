@@ -1,5 +1,4 @@
-import type { UIMessage } from "ai";
-import { createAgentId, type AgentSessionCreateInput } from "../types";
+import { createAgentId } from "../types";
 import type {
   CommitResult,
   CreateSessionInput,
@@ -25,14 +24,6 @@ interface IndexedDbAgentStorageOptions {
   dbName: string;
   version?: number;
   loggerOptions?: LoggerOptions;
-}
-
-/**
- * IndexedDB record shape used for persisted UI message lists.
- */
-interface StoredMessages<UI_MESSAGE extends UIMessage> {
-  sessionId: string;
-  messages: UI_MESSAGE[];
 }
 
 /**
@@ -68,10 +59,7 @@ function transactionToPromise(transaction: IDBTransaction) {
   });
 }
 
-export class IndexedDbAgentStorage<
-  UI_MESSAGE extends UIMessage = UIMessage,
-  TSessionData = UI_MESSAGE[],
-> implements StorageProvider<TSessionData> {
+export class IndexedDbAgentStorage<TSessionData = unknown> implements StorageProvider<TSessionData> {
   private readonly dbName: string;
   private readonly version: number;
   private readonly logger?: RuntimeLogger;
@@ -79,24 +67,23 @@ export class IndexedDbAgentStorage<
 
   constructor(options: IndexedDbAgentStorageOptions) {
     this.dbName = options.dbName;
-    this.version = options.version ?? 2;
+    this.version = options.version ?? 3;
     this.logger = createRuntimeLogger(options.loggerOptions);
   }
 
-  async createSession(input: AgentSessionCreateInput | CreateSessionInput = {}) {
+  async createSession(input: CreateSessionInput = {}) {
     traceRuntimeDebug(this.logger, "storage:indexeddb:create-session:start", {
       dbName: this.dbName,
       title: input.title ?? null,
     });
     const now = new Date().toISOString();
-    const metadata = "metadata" in input ? input.metadata : undefined;
     const session: SessionRecord = {
       id: input.id ?? createAgentId(),
       title: input.title ?? "Untitled Session",
       createdAt: now,
       updatedAt: now,
       revision: createRevision(),
-      metadata,
+      metadata: input.metadata,
     };
 
     const db = await this.getDb();
@@ -157,9 +144,8 @@ export class IndexedDbAgentStorage<
 
   async deleteSession(id: string) {
     const db = await this.getDb();
-    const transaction = db.transaction(["sessions", "messages", "sessionData"], "readwrite");
+    const transaction = db.transaction(["sessions", "sessionData"], "readwrite");
     transaction.objectStore("sessions").delete(id);
-    transaction.objectStore("messages").delete(id);
     transaction.objectStore("sessionData").delete(id);
     await transactionToPromise(transaction);
   }
@@ -213,24 +199,6 @@ export class IndexedDbAgentStorage<
     } satisfies CommitResult;
   }
 
-  async loadMessages(id: string) {
-    const db = await this.getDb();
-    const transaction = db.transaction(["messages"], "readonly");
-    const record = await requestToPromise(transaction.objectStore("messages").get(id));
-    await transactionToPromise(transaction);
-    return ((record as StoredMessages<UI_MESSAGE> | undefined)?.messages ?? []) as UI_MESSAGE[];
-  }
-
-  async saveMessages(id: string, messages: UI_MESSAGE[], _options?: MutationOptions) {
-    const db = await this.getDb();
-    const transaction = db.transaction(["messages"], "readwrite");
-    transaction.objectStore("messages").put({
-      sessionId: id,
-      messages,
-    } satisfies StoredMessages<UI_MESSAGE>);
-    await transactionToPromise(transaction);
-  }
-
   private getDb() {
     if (!this.dbPromise) {
       this.dbPromise = new Promise<IDBDatabase>((resolve, reject) => {
@@ -248,11 +216,11 @@ export class IndexedDbAgentStorage<
           if (!db.objectStoreNames.contains("sessions")) {
             db.createObjectStore("sessions", { keyPath: "id" });
           }
-          if (!db.objectStoreNames.contains("messages")) {
-            db.createObjectStore("messages", { keyPath: "sessionId" });
-          }
           if (!db.objectStoreNames.contains("sessionData")) {
             db.createObjectStore("sessionData", { keyPath: "sessionId" });
+          }
+          if (db.objectStoreNames.contains("messages")) {
+            db.deleteObjectStore("messages");
           }
         };
 

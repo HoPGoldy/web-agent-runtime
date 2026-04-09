@@ -1,10 +1,9 @@
-import type { UIMessage } from "ai";
 import { describe, expect, it } from "vitest";
 import { createRuntimeSessionData, type RuntimeSessionData } from "../src/session/session-types";
 import { IndexedDbAgentStorage } from "../src/storage/indexed-db-agent-storage";
 
 function createStorage() {
-  return new IndexedDbAgentStorage<UIMessage, RuntimeSessionData>({
+  return new IndexedDbAgentStorage<RuntimeSessionData>({
     dbName: `storage-contract-${crypto.randomUUID()}`,
   });
 }

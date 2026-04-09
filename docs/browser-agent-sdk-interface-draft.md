@@ -11,14 +11,14 @@
 
 ## 当前导出形态
 
-当前实现已经同时提供两组入口：
+当前实现只保留一条 runtime-first 主路径：
 
-- 根入口继续保留现有 `Agent`、tool factory、`IndexedDbAgentStorage` 等 legacy API
-- 根入口新增新的 runtime SDK 入口：`createAgentRuntime`、`createJsonSessionDataCodec`、`createAiSdkLlmProvider`
-- 根入口同时补齐 runtime、session、provider 的核心类型导出，方便浏览器宿主直接集成
-- 过渡期 namespace `runtimeContracts`、`sessionContracts`、`providerContracts` 继续保留，用于低风险迁移和按域引用
+- 根入口导出 `createAgentRuntime`、`createJsonSessionDataCodec`、`createAiSdkLlmProvider`
+- 根入口同时导出 runtime、session、provider 的核心类型，方便浏览器宿主直接集成
+- `IndexedDbAgentStorage` 只实现 session metadata + opaque session document 存储语义
+- 可选辅助函数仅围绕当前主路径保留，例如 `createAiSdkToolSet` 和 `createResultStream`
 
-也就是说，v1 已经不是“只有占位声明”的阶段，而是“新旧 API 并存，逐步迁移到新 runtime”的阶段
+也就是说，v1 已经不再并行维护旧的 message-centric facade，而是直接以新 runtime 结构作为唯一公开边界
 
 ## 适用范围
 
@@ -764,8 +764,8 @@ await runtime.prompt("Summarize the current document and propose a cleaner struc
 
 ## 下一步
 
-迁移说明已经补到 [browser-agent-sdk-migration-plan.md](./browser-agent-sdk-migration-plan.md)，下一步主要是围绕宿主集成继续推进：
+收敛说明已经补到 [browser-agent-sdk-migration-plan.md](./browser-agent-sdk-migration-plan.md)，下一步主要是围绕宿主集成继续推进：
 
 - Office.js host context 的首个真实接入
 - 是否在后续版本中加入自动 compaction 策略
-- 旧 `Agent` API 何时收敛为基于 `AgentRuntime` 的 adapter 层
+- 多标签页并发冲突是否需要宿主侧补充显式 UX

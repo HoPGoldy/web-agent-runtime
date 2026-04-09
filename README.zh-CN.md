@@ -35,7 +35,6 @@
 - 可插拔的 LLM provider、storage provider、prompt composer 和 tools 契约
 - 基于 IndexedDB 的浏览器端 session 持久化
 - AI SDK 兼容的 HTTP 适配层，方便把浏览器请求接到你的后端
-- 保留了面向旧 `UIMessage` 集成方式的 `Agent` 兼容层
 
 ## 架构概览
 
@@ -131,7 +130,7 @@ const runtime = await createAgentRuntime<HostContext, RuntimeSessionData>({
       "Content-Type": "application/json",
     },
   }),
-  storage: new IndexedDbAgentStorage<never, RuntimeSessionData>({
+  storage: new IndexedDbAgentStorage<RuntimeSessionData>({
     dbName: "company-portal-agent",
   }),
   sessionDataCodec: createJsonSessionDataCodec(),
@@ -159,29 +158,28 @@ await runtime.prompt("Find the latest PTO policy and summarize it.");
 
 仓库里的 demo 支持直接从浏览器调用 OpenAI-compatible endpoint 做本地验证，但这只适合本地实验和调试，不适合生产环境。
 
-## API 路径
+## 对外 API
 
-对于新集成，优先使用新的 runtime SDK：
+当前包只保留一条 runtime-first 主路径：
 
 - `createAgentRuntime`
 - `createAiSdkLlmProvider`
 - `createJsonSessionDataCodec`
 - `IndexedDbAgentStorage`
+- runtime、session、provider 的核心类型
 
-为了兼容旧的 message-centric 集成方式，仓库也保留了 legacy 路径：
+同时保留少量 AI SDK 互操作辅助函数：
 
-- `Agent`
-- `createAiSdkLlmCaller`
-- `RuntimeChat`
-- `createReadTool`、`createWriteTool`、`createEditTool`、`createRunJsTool` 等 tool factory
+- `createAiSdkToolSet`
+- `createResultStream`
 
 ## 仓库结构
 
 - `src/runtime/`：runtime loop、事件、compaction、日志
 - `src/session/`：session record、session graph 类型、codec、runtime session store
 - `src/providers/`：provider 契约和 prompt/tool 抽象
+- `src/llm/`：面向 AI SDK 的 provider 适配和结果流辅助函数
 - `src/storage/`：IndexedDB 持久化实现
-- `src/tools/`：legacy tool 接口和辅助工厂
 - `demo/`：用 Vite + React 写的浏览器端验证 demo
 - `docs/`：接口草案和迁移说明
 
@@ -198,11 +196,7 @@ await runtime.prompt("Find the latest PTO policy and summarize it.");
 
 ## 当前状态
 
-这个仓库已经包含可用的新 runtime SDK，但 `docs/` 里的文档仍然反映出它还处在持续演进的浏览器 agent 设计阶段。当前方向很明确：
-
-- 新功能优先放在新的 runtime API 上
-- 旧 `Agent` 保留为迁移路径
-- 浏览器宿主能力继续作为第一等集成边界来设计
+这个仓库现在只保留 runtime-only 浏览器 SDK。公开接口围绕 runtime、session 和 provider 契约组织，不再并行保留旧的 message-centric facade。
 
 ## License
 

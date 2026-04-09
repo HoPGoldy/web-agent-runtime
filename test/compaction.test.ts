@@ -10,7 +10,7 @@ import {
 
 describe("compaction", () => {
   it("persists a compaction entry and rebuilds active context", async () => {
-    const storage = new IndexedDbAgentStorage<never, RuntimeSessionData>({
+    const storage = new IndexedDbAgentStorage<RuntimeSessionData>({
       dbName: `compaction-${crypto.randomUUID()}`,
     });
     const runtime = await createAgentRuntime({

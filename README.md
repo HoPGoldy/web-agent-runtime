@@ -35,7 +35,6 @@ If your agent only needs to run on the server, this repository is probably not t
 - Pluggable contracts for LLM providers, storage providers, prompt composition, and tools
 - IndexedDB-backed session storage for browser persistence
 - AI SDK-compatible HTTP adapter for connecting browser runtime requests to your backend
-- Legacy `Agent` facade for existing `UIMessage`-based integrations
 
 ## Architecture
 
@@ -131,7 +130,7 @@ const runtime = await createAgentRuntime<HostContext, RuntimeSessionData>({
       "Content-Type": "application/json",
     },
   }),
-  storage: new IndexedDbAgentStorage<never, RuntimeSessionData>({
+  storage: new IndexedDbAgentStorage<RuntimeSessionData>({
     dbName: "company-portal-agent",
   }),
   sessionDataCodec: createJsonSessionDataCodec(),
@@ -159,29 +158,28 @@ The intended production model is:
 
 The included demo can call an OpenAI-compatible endpoint directly from the browser for local validation. That is only appropriate for local experiments, not production deployments.
 
-## API Paths
+## Public API
 
-For new integrations, prefer the runtime SDK:
+The package exposes a single runtime-first surface:
 
 - `createAgentRuntime`
 - `createAiSdkLlmProvider`
 - `createJsonSessionDataCodec`
 - `IndexedDbAgentStorage`
+- runtime, session, and provider core types
 
-For compatibility with older message-centric integrations, the package also keeps the legacy path:
+Optional helpers remain available for AI SDK interop and stream testing:
 
-- `Agent`
-- `createAiSdkLlmCaller`
-- `RuntimeChat`
-- tool factory helpers such as `createReadTool`, `createWriteTool`, `createEditTool`, and `createRunJsTool`
+- `createAiSdkToolSet`
+- `createResultStream`
 
 ## Repository Layout
 
 - `src/runtime/`: runtime loop, events, compaction, logging
 - `src/session/`: session records, session graph types, codec, runtime session store
 - `src/providers/`: provider contracts and prompt/tool abstractions
+- `src/llm/`: AI SDK-oriented provider adapters and result-stream helpers
 - `src/storage/`: IndexedDB persistence implementation
-- `src/tools/`: legacy tool interfaces and helper factories
 - `demo/`: Vite + React demo for validating browser-side runtime behavior
 - `docs/`: interface draft and migration notes
 
@@ -198,11 +196,7 @@ See [`demo/README.md`](./demo/README.md) for setup details.
 
 ## Status
 
-This repository already ships a usable runtime SDK, but the docs in `docs/` still reflect an actively evolving browser-agent design. The current direction is:
-
-- keep the new runtime API as the primary path for new work
-- preserve the old `Agent` facade as a migration path
-- continue treating browser host capabilities as first-class integration points
+This repository ships a runtime-only browser SDK. The public surface is centered on runtime, session, and provider contracts, with no legacy message-centric facade kept in parallel.
 
 ## License
 

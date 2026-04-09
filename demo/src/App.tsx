@@ -1,4 +1,3 @@
-import type { UIMessage } from "ai";
 import { startTransition, useDeferredValue, useEffect, useEffectEvent, useRef, useState } from "react";
 import {
   createAgentRuntime,
@@ -141,7 +140,7 @@ export default function App() {
           apiKey: OPENAI_KEY,
           baseUrl: OPENAI_BASE_URL || undefined,
         }),
-        storage: new IndexedDbAgentStorage<UIMessage, RuntimeSessionData>({
+        storage: new IndexedDbAgentStorage<RuntimeSessionData>({
           dbName: STORAGE_NAME,
         }),
         tools: createTextareaTools({

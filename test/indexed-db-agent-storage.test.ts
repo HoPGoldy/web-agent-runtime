@@ -1,17 +1,8 @@
-import type { UIMessage } from "ai";
 import { describe, expect, it } from "vitest";
 import { IndexedDbAgentStorage } from "../src/storage/indexed-db-agent-storage";
 
-function createMessage(id: string): UIMessage {
-  return {
-    id,
-    role: "user",
-    parts: [{ type: "text", text: id }],
-  } as UIMessage;
-}
-
 function createStorage() {
-  return new IndexedDbAgentStorage({
+  return new IndexedDbAgentStorage<Record<string, unknown>>({
     dbName: `test-db-${crypto.randomUUID()}`,
   });
 }
@@ -43,19 +34,27 @@ describe("IndexedDbAgentStorage", () => {
     expect((await storage.listSessions()).map((session) => session.id)).toEqual(["newer", "older"]);
   });
 
-  it("saves, loads, and deletes session messages", async () => {
+  it("saves, loads, and deletes session data", async () => {
     const storage = createStorage();
-    const messages = [createMessage("message-1"), createMessage("message-2")];
+    const sessionData = {
+      version: 1,
+      entries: ["message-1", "message-2"],
+    };
 
-    await storage.createSession({ id: "session-1" });
-    await storage.saveMessages("session-1", messages);
+    const session = await storage.createSession({ id: "session-1" });
+    await storage.saveSessionData("session-1", sessionData, {
+      expectedRevision: session.revision,
+    });
 
-    expect(await storage.loadMessages("session-1")).toEqual(messages);
+    expect(await storage.loadSessionData("session-1")).toEqual({
+      session: expect.objectContaining({ id: "session-1" }),
+      data: sessionData,
+    });
 
     await storage.deleteSession("session-1");
 
     expect(await storage.getSession("session-1")).toBeNull();
-    expect(await storage.loadMessages("session-1")).toEqual([]);
+    expect(await storage.loadSessionData("session-1")).toBeNull();
   });
 
   it("rejects updates for missing sessions", async () => {

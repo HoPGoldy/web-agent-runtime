@@ -1,25 +1,26 @@
-import { DefaultChatTransport, type UIMessage } from "ai";
-import type { SerializedTool } from "../tools/tool-interface";
-import type { AssistantStreamEvent, LlmContext, LlmProvider } from "./llm-provider-interface";
-import { createResultStream } from "./llm-provider-interface";
+import type {
+  AssistantStreamEvent,
+  LlmProvider,
+  LlmToolDefinition,
+} from "../providers";
 import type { AssistantMessage, ToolCallBlock } from "../session/session-types";
-import type { CreateLlmTransportContext, LlmCallInterface } from "./llm-call-interface";
+import { createResultStream } from "./llm-provider-interface";
 
 /**
- * Input used to build the request body for the AI SDK transport adapter.
+ * Input used to build the request body for the AI SDK provider adapter.
  */
-export interface BuildAiSdkBodyOptions<UI_MESSAGE extends UIMessage> {
+export interface BuildAiSdkBodyOptions<TMessage = unknown> {
   chatId: string;
   sessionId?: string;
   systemPrompt: string;
-  messages: UI_MESSAGE[];
-  tools: SerializedTool[];
+  messages: TMessage[];
+  tools: LlmToolDefinition[];
 }
 
 /**
- * Options for building an Agent-compatible AI SDK chat transport.
+ * Options for wrapping an HTTP endpoint as a runtime LLM provider.
  */
-export interface CreateAiSdkLlmCallerOptions<UI_MESSAGE extends UIMessage> {
+export interface CreateAiSdkLlmProviderOptions<TMessage = unknown> {
   api: string;
   headers?:
     | Record<string, string>
@@ -27,53 +28,8 @@ export interface CreateAiSdkLlmCallerOptions<UI_MESSAGE extends UIMessage> {
     | (() => Record<string, string> | Headers | Promise<Record<string, string> | Headers>);
   fetch?: typeof globalThis.fetch;
   buildBody?: (
-    options: BuildAiSdkBodyOptions<UI_MESSAGE>,
+    options: BuildAiSdkBodyOptions<TMessage>,
   ) => Promise<Record<string, unknown>> | Record<string, unknown>;
-}
-
-/**
- * Options for wrapping an HTTP endpoint as a runtime LLM provider.
- */
-export interface CreateAiSdkLlmProviderOptions<
-  UI_MESSAGE extends UIMessage,
-> extends CreateAiSdkLlmCallerOptions<UI_MESSAGE> {}
-
-export function createAiSdkLlmCaller<UI_MESSAGE extends UIMessage = UIMessage>(
-  options: CreateAiSdkLlmCallerOptions<UI_MESSAGE>,
-): LlmCallInterface<UI_MESSAGE> {
-  return {
-    createTransport(context: CreateLlmTransportContext<UI_MESSAGE>) {
-      return new DefaultChatTransport<UI_MESSAGE>({
-        api: options.api,
-        headers: options.headers,
-        fetch: options.fetch,
-        prepareSendMessagesRequest: async ({ id, messages }) => {
-          const tools = context.getTools().map((tool) => ({
-            name: tool.name,
-            description: tool.description,
-            inputSchema: tool.inputSchema,
-          }));
-
-          const body = options.buildBody
-            ? await options.buildBody({
-                chatId: id,
-                sessionId: context.getSessionId(),
-                systemPrompt: context.getSystemPrompt(),
-                messages,
-                tools,
-              })
-            : {
-                id: context.getSessionId() ?? id,
-                systemPrompt: context.getSystemPrompt(),
-                messages,
-                tools,
-              };
-
-          return { body };
-        },
-      });
-    },
-  };
 }
 
 async function resolveHeaders(
@@ -94,7 +50,7 @@ function buildDefaultProviderBody<TMessage>(options: {
   sessionId?: string;
   systemPrompt: string;
   messages: TMessage[];
-  tools: SerializedTool[];
+  tools: LlmToolDefinition[];
 }) {
   return {
     id: options.sessionId,
@@ -156,22 +112,18 @@ function getFinalMessageFromEvents(events: Array<AssistantStreamEvent<AssistantM
   return terminalEvent.type === "done" ? terminalEvent.message : terminalEvent.error;
 }
 
-export function createAiSdkLlmProvider<UI_MESSAGE extends UIMessage = UIMessage>(
-  options: CreateAiSdkLlmProviderOptions<UI_MESSAGE>,
+export function createAiSdkLlmProvider<TMessage = unknown>(
+  options: CreateAiSdkLlmProviderOptions<TMessage>,
 ): LlmProvider<AssistantMessage> {
   return {
     async stream(request) {
-      const tools = (request.context.tools ?? []).map((tool) => ({
-        name: tool.name,
-        description: tool.description,
-        inputSchema: tool.inputSchema,
-      }));
+      const tools = request.context.tools ?? [];
       const body = options.buildBody
         ? await options.buildBody({
             chatId: request.sessionId ?? `${request.model.provider}:${request.model.id}`,
             sessionId: request.sessionId,
             systemPrompt: request.context.systemPrompt,
-            messages: request.context.messages as unknown as UI_MESSAGE[],
+            messages: request.context.messages as TMessage[],
             tools,
           })
         : buildDefaultProviderBody({

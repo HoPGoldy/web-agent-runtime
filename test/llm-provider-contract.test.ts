@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { createAiSdkLlmProvider } from "../src/llm/create-ai-sdk-llm-caller";
+import { createAiSdkLlmProvider, type BuildAiSdkBodyOptions } from "../src/llm/create-ai-sdk-llm-provider";
 import type { LlmProvider } from "../src/providers";
 import type { AssistantMessage, UserMessage } from "../src/session/session-types";
 
@@ -103,5 +103,61 @@ describe("LLM provider contract", () => {
       { type: "start", partial: assistantMessage },
       { type: "done", message: assistantMessage, reason: assistantMessage.stopReason },
     ]);
+  });
+
+  it("delegates request body creation to buildBody when provided", async () => {
+    const assistantMessage = createAssistantMessage("custom");
+    const tool = {
+      name: "search",
+      description: "Search the current workspace",
+      inputSchema: {
+        type: "object",
+        properties: {
+          query: { type: "string" },
+        },
+        required: ["query"],
+      },
+    };
+    const buildBody = vi.fn(async (options: BuildAiSdkBodyOptions<UserMessage>) => ({
+      chatId: options.chatId,
+      toolCount: options.tools.length,
+      custom: true,
+    }));
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      expect(JSON.parse(String(init?.body))).toEqual({
+        chatId: "proxy:claude-test",
+        toolCount: 1,
+        custom: true,
+      });
+
+      return new Response(
+        JSON.stringify({
+          message: assistantMessage,
+        }),
+      );
+    });
+    const provider = createAiSdkLlmProvider({
+      api: "/api/chat",
+      buildBody,
+      fetch: fetchMock,
+    }) as LlmProvider<unknown>;
+
+    const stream = await provider.stream({
+      model: { provider: "proxy", id: "claude-test" },
+      context: {
+        systemPrompt: "System prompt",
+        messages: [createUserMessage("custom")],
+        tools: [tool],
+      },
+    });
+
+    expect(await stream.result()).toEqual(assistantMessage);
+    expect(buildBody).toHaveBeenCalledWith({
+      chatId: "proxy:claude-test",
+      sessionId: undefined,
+      systemPrompt: "System prompt",
+      messages: [createUserMessage("custom")],
+      tools: [tool],
+    });
   });
 });

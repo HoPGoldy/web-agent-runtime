@@ -1,14 +1,12 @@
 import { jsonSchema, tool } from "ai";
-import type { SerializedTool } from "../tools/tool-interface";
+import type { LlmToolDefinition } from "../providers";
 
 /**
  * Tool dictionary compatible with the AI SDK `tool` helper.
  */
 export type AiSdkToolSet = Record<string, ReturnType<typeof tool>>;
 
-export function createAiSdkToolSet(
-  tools: readonly SerializedTool[],
-): AiSdkToolSet {
+export function createAiSdkToolSet(tools: readonly LlmToolDefinition[]): AiSdkToolSet {
   return Object.fromEntries(
     tools.map((toolDefinition) => [
       toolDefinition.name,

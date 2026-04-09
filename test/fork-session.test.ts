@@ -10,7 +10,7 @@ import {
 
 describe("forked sessions", () => {
   it("creates a new session from a chosen source entry", async () => {
-    const storage = new IndexedDbAgentStorage<never, RuntimeSessionData>({
+    const storage = new IndexedDbAgentStorage<RuntimeSessionData>({
       dbName: `fork-session-${crypto.randomUUID()}`,
     });
     const runtime = await createAgentRuntime({

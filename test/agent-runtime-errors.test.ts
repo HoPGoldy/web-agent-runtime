@@ -24,7 +24,7 @@ describe("agent runtime errors", () => {
   });
 
   it("surfaces codec failures without overwriting stored session data", async () => {
-    const storage = new IndexedDbAgentStorage<never, Record<string, unknown>>({
+    const storage = new IndexedDbAgentStorage<Record<string, unknown>>({
       dbName: `runtime-errors-codec-${crypto.randomUUID()}`,
     });
     const session = await storage.createSession({ id: "session-1" });

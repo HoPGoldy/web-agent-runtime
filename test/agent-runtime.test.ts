@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createAgentRuntime } from "../src/runtime/agent-runtime";
+import type { RuntimeSessionData } from "../src/session/session-types";
 import { IndexedDbAgentStorage } from "../src/storage/indexed-db-agent-storage";
 import {
   createAssistantTextMessage,
@@ -8,7 +9,7 @@ import {
 } from "./runtime-test-helpers";
 
 function createStorage(name: string) {
-  return new IndexedDbAgentStorage({ dbName: name });
+  return new IndexedDbAgentStorage<RuntimeSessionData>({ dbName: name });
 }
 
 describe("agent runtime", () => {
