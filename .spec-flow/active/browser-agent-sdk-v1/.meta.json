@@ -1,0 +1,17 @@
+{
+  "feature": "browser-agent-sdk-v1",
+  "status": "draft",
+  "mode": "fast",
+  "language": "zh-CN",
+  "createdAt": "2026-04-09",
+  "updatedAt": "2026-04-09",
+  "references": [
+    "docs/browser-agent-sdk-interface-draft.md",
+    "pi-mono/packages/agent",
+    "pi-mono/packages/coding-agent"
+  ],
+  "constraints": [
+    "不确定行为参考 pi coding-agent",
+    "以 TDD 形式开发"
+  ]
+}

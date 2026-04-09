@@ -29,6 +29,9 @@ export { createReadTool } from "./tools/create-read-tool";
 export { createWriteTool } from "./tools/create-write-tool";
 export { createEditTool } from "./tools/create-edit-tool";
 export { createRunJsTool } from "./tools/create-run-js-tool";
+export * as runtimeContracts from "./runtime";
+export * as sessionContracts from "./session";
+export * as providerContracts from "./providers";
 export type {
   SerializedTool,
   ToolExecutionContext,
