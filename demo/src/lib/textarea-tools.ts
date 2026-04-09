@@ -1,4 +1,4 @@
-import type { AgentMessage, ToolDefinition } from "@oneai/web-agent";
+import type { AgentMessage, ToolDefinition } from "web-agent-runtime";
 
 export interface TextSelection {
   start: number;

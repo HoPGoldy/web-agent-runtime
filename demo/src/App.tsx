@@ -7,7 +7,7 @@ import {
   type RuntimeEvent,
   type RuntimeState,
   type RuntimeSessionData,
-} from "@oneai/web-agent";
+} from "web-agent-runtime";
 import {
   extractAssistantText,
   extractToolCalls,

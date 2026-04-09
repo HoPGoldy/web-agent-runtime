@@ -1,5 +1,5 @@
 {
-  "name": "@oneai/web-agent-demo",
+  "name": "web-agent-runtime-demo",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -12,7 +12,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@oneai/web-agent": "file:..",
+    "web-agent-runtime": "file:..",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },

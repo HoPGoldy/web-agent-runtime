@@ -1,4 +1,4 @@
-import type { AssistantMessage, RuntimeEvent, RuntimeState, ToolCallBlock } from "@oneai/web-agent";
+import type { AssistantMessage, RuntimeEvent, RuntimeState, ToolCallBlock } from "web-agent-runtime";
 
 export function formatClock(value: number | string) {
   const date = typeof value === "number" ? new Date(value) : new Date(value);

@@ -8,7 +8,7 @@ importers:
 
   .:
     dependencies:
-      '@oneai/web-agent':
+      'web-agent-runtime':
         specifier: file:..
         version: file:..(zod@4.3.6)
       react:
@@ -307,7 +307,7 @@ packages:
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
 
-  '@oneai/web-agent@file:..':
+  'web-agent-runtime@file:..':
     resolution: {directory: .., type: directory}
     engines: {node: '>=18'}
 
@@ -907,7 +907,7 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
 
-  '@oneai/web-agent@file:..(zod@4.3.6)':
+  'web-agent-runtime@file:..(zod@4.3.6)':
     dependencies:
       ai: 6.0.154(zod@4.3.6)
     transitivePeerDependencies:

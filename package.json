@@ -1,5 +1,5 @@
 {
-  "name": "@oneai/web-agent",
+  "name": "web-agent-runtime",
   "version": "1.0.0",
   "type": "module",
   "main": "./dist/index.js",

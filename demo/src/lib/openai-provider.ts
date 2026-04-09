@@ -8,7 +8,7 @@ import {
   type ThinkingLevel,
   type ToolCallBlock,
   type ToolResultContentBlock,
-} from "@oneai/web-agent";
+} from "web-agent-runtime";
 
 export interface OpenAiProviderOptions {
   apiKey: string;

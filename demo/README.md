@@ -1,6 +1,6 @@
 # web-agent-runtime demo
 
-一个基于 Vite + React + TypeScript 的本地 demo，用来演示 `@oneai/web-agent` 新 runtime SDK：
+一个基于 Vite + React + TypeScript 的本地 demo，用来演示 `web-agent-runtime` 新 runtime SDK：
 
 - OpenAI-compatible LLM provider
 - textarea CRUD tools
