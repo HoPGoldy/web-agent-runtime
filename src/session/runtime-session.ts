@@ -11,11 +11,17 @@ import { createRuntimeSessionData, extractBranchSessionData, type RuntimeSession
 import type { ForkSessionInput, ForkSessionResult } from "../runtime/contracts";
 import { traceRuntimeDebug, type RuntimeLogger } from "../runtime/debug";
 
+/**
+ * Runtime session record paired with its hydrated session data.
+ */
 export interface LoadedRuntimeSession {
   session: SessionRecord;
   data: RuntimeSessionData;
 }
 
+/**
+ * Result of forking a runtime session, including the forked branch data.
+ */
 export interface ForkedRuntimeSession extends ForkSessionResult {
   data: RuntimeSessionData;
 }

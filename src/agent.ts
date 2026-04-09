@@ -13,6 +13,9 @@ import {
   type AgentState,
 } from "./types";
 
+/**
+ * Configuration for the high-level Agent facade.
+ */
 export interface AgentOptions<UI_MESSAGE extends UIMessage = UIMessage> {
   storage: StorageInterface<UI_MESSAGE>;
   llmCaller: LlmCallInterface<UI_MESSAGE>;
@@ -22,8 +25,14 @@ export interface AgentOptions<UI_MESSAGE extends UIMessage = UIMessage> {
   sessionTitle?: string;
 }
 
+/**
+ * Prompt input accepted by the high-level Agent methods.
+ */
 type PromptInput<UI_MESSAGE extends UIMessage> = string | UI_MESSAGE | UI_MESSAGE[];
 
+/**
+ * Normalized tool call shape produced by the runtime chat integration.
+ */
 interface RuntimeToolCall {
   toolCallId: string;
   toolName: string;

@@ -1,10 +1,16 @@
 import type { LocalStorageFileStore } from "../local-storage-file-store";
 import type { ToolInterface } from "./tool-interface";
 
+/**
+ * Input accepted by the demo read tool.
+ */
 interface ReadToolInput {
   key: string;
 }
 
+/**
+ * Options for creating the demo read tool.
+ */
 interface CreateReadToolOptions {
   fileStore: LocalStorageFileStore;
 }

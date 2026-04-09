@@ -1,6 +1,9 @@
 import { jsonSchema, tool } from "ai";
 import type { SerializedTool } from "../tools/tool-interface";
 
+/**
+ * Tool dictionary compatible with the AI SDK `tool` helper.
+ */
 export type AiSdkToolSet = Record<string, ReturnType<typeof tool>>;
 
 export function createAiSdkToolSet(

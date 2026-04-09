@@ -1,6 +1,9 @@
 import type { UIMessage } from "ai";
 import type { AgentSession } from "../types";
 
+/**
+ * Context passed to a high-level Agent tool implementation.
+ */
 export interface ToolExecutionContext<
   UI_MESSAGE extends UIMessage = UIMessage,
 > {
@@ -8,6 +11,9 @@ export interface ToolExecutionContext<
   messages: UI_MESSAGE[];
 }
 
+/**
+ * Tool contract used by the high-level Agent wrapper.
+ */
 export interface ToolInterface<
   INPUT = unknown,
   OUTPUT = unknown,
@@ -25,6 +31,9 @@ export interface ToolInterface<
   ): Promise<OUTPUT>;
 }
 
+/**
+ * Serializable shape of a tool definition.
+ */
 export interface SerializedTool {
   name: string;
   description: string;

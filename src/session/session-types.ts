@@ -2,23 +2,35 @@ import type { ModelRef, ThinkingLevel, TokenUsage } from "../providers";
 
 export const RUNTIME_SESSION_DATA_VERSION = 1;
 
+/**
+ * Plain text content block stored in session history.
+ */
 export interface TextBlock {
   type: "text";
   text: string;
 }
 
+/**
+ * Inline image content stored in session history.
+ */
 export interface ImageBlock {
   type: "image";
   data: string;
   mimeType: string;
 }
 
+/**
+ * Provider reasoning block attached to an assistant message.
+ */
 export interface ThinkingBlock {
   type: "thinking";
   text: string;
   signature?: string;
 }
 
+/**
+ * Tool call requested by an assistant message.
+ */
 export interface ToolCallBlock {
   type: "toolCall";
   id: string;
@@ -26,10 +38,24 @@ export interface ToolCallBlock {
   arguments: Record<string, unknown>;
 }
 
+/**
+ * Structured content variants allowed in user messages.
+ */
 export type UserContentBlock = TextBlock | ImageBlock;
+
+/**
+ * Structured content variants allowed in assistant messages.
+ */
 export type AssistantContentBlock = TextBlock | ImageBlock | ThinkingBlock | ToolCallBlock;
+
+/**
+ * Structured content variants allowed in tool result messages.
+ */
 export type ToolResultContentBlock = TextBlock | ImageBlock;
 
+/**
+ * User-authored message stored in a runtime session.
+ */
 export interface UserMessage {
   role: "user";
   content: string | UserContentBlock[];
@@ -37,6 +63,9 @@ export interface UserMessage {
   metadata?: Record<string, unknown>;
 }
 
+/**
+ * Assistant response stored in a runtime session.
+ */
 export interface AssistantMessage {
   role: "assistant";
   content: AssistantContentBlock[];
@@ -49,6 +78,9 @@ export interface AssistantMessage {
   metadata?: Record<string, unknown>;
 }
 
+/**
+ * Message capturing the result of a tool execution.
+ */
 export interface ToolResultMessage<TDetails = unknown> {
   role: "toolResult";
   toolCallId: string;
@@ -60,6 +92,9 @@ export interface ToolResultMessage<TDetails = unknown> {
   metadata?: Record<string, unknown>;
 }
 
+/**
+ * Host-defined custom message stored alongside normal conversation messages.
+ */
 export interface CustomMessage<TType extends string = string, TDetails = unknown> {
   role: "custom";
   customType: TType;
@@ -70,30 +105,48 @@ export interface CustomMessage<TType extends string = string, TDetails = unknown
   metadata?: Record<string, unknown>;
 }
 
+/**
+ * Any message record that may appear in runtime session history.
+ */
 export type AgentMessage = UserMessage | AssistantMessage | ToolResultMessage | CustomMessage;
 
+/**
+ * Common fields shared by all session entries.
+ */
 export interface SessionEntryBase {
   id: string;
   parentId: string | null;
   timestamp: string;
 }
 
+/**
+ * Session entry that appends a conversation message.
+ */
 export interface MessageEntry extends SessionEntryBase {
   type: "message";
   message: AgentMessage;
 }
 
+/**
+ * Session entry that records a model selection change.
+ */
 export interface ModelChangeEntry extends SessionEntryBase {
   type: "model_change";
   provider: string;
   modelId: string;
 }
 
+/**
+ * Session entry that records a reasoning level change.
+ */
 export interface ThinkingLevelChangeEntry extends SessionEntryBase {
   type: "thinking_level_change";
   thinkingLevel: ThinkingLevel;
 }
 
+/**
+ * Session entry that replaces older history with a compacted summary.
+ */
 export interface CompactionEntry<TDetails = unknown> extends SessionEntryBase {
   type: "compaction";
   summary: string;
@@ -102,6 +155,9 @@ export interface CompactionEntry<TDetails = unknown> extends SessionEntryBase {
   details?: TDetails;
 }
 
+/**
+ * Session entry that records a summary for a forked branch.
+ */
 export interface BranchSummaryEntry<TDetails = unknown> extends SessionEntryBase {
   type: "branch_summary";
   fromId: string;
@@ -109,12 +165,18 @@ export interface BranchSummaryEntry<TDetails = unknown> extends SessionEntryBase
   details?: TDetails;
 }
 
+/**
+ * Session entry for host-owned data that should follow the branch lineage.
+ */
 export interface HostDataEntry<TData = unknown> extends SessionEntryBase {
   type: "host_data";
   key: string;
   data?: TData;
 }
 
+/**
+ * Any entry type that may be stored in runtime session history.
+ */
 export type SessionEntry =
   | MessageEntry
   | ModelChangeEntry
@@ -123,6 +185,9 @@ export type SessionEntry =
   | BranchSummaryEntry
   | HostDataEntry;
 
+/**
+ * Persisted data model for a runtime session branch.
+ */
 export interface RuntimeSessionData {
   version: number;
   headEntryId: string | null;
@@ -130,6 +195,9 @@ export interface RuntimeSessionData {
   metadata?: Record<string, unknown>;
 }
 
+/**
+ * Materialized view of a runtime session at a specific head entry.
+ */
 export interface RuntimeSessionView {
   messages: AgentMessage[];
   model: ModelRef;

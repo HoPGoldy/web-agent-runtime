@@ -1,11 +1,17 @@
 import type { LocalStorageFileStore } from "../local-storage-file-store";
 import type { ToolInterface } from "./tool-interface";
 
+/**
+ * Input accepted by the demo write tool.
+ */
 interface WriteToolInput {
   key: string;
   content: string;
 }
 
+/**
+ * Options for creating the demo write tool.
+ */
 interface CreateWriteToolOptions {
   fileStore: LocalStorageFileStore;
 }

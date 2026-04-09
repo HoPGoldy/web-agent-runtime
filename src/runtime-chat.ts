@@ -13,6 +13,9 @@ function cloneValue<T>(value: T) {
   return JSON.parse(JSON.stringify(value)) as T;
 }
 
+/**
+ * Runtime-specific extensions layered on top of the AI SDK chat options.
+ */
 interface RuntimeChatOptions<
   UI_MESSAGE extends UIMessage,
 > extends ChatInit<UI_MESSAGE> {

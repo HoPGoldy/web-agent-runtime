@@ -1,12 +1,18 @@
 import type { LocalStorageFileStore } from "../local-storage-file-store";
 import type { ToolInterface } from "./tool-interface";
 
+/**
+ * Input accepted by the demo edit tool.
+ */
 interface EditToolInput {
   key: string;
   oldText: string;
   newText: string;
 }
 
+/**
+ * Options for creating the demo edit tool.
+ */
 interface CreateEditToolOptions {
   fileStore: LocalStorageFileStore;
 }

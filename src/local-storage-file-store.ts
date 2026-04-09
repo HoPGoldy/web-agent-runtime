@@ -1,3 +1,6 @@
+/**
+ * In-memory and localStorage-backed file store used by the demo tools.
+ */
 export interface LocalStorageFileStore {
   getFiles(): Record<string, string>;
   reset(): Record<string, string>;
@@ -14,6 +17,9 @@ export interface LocalStorageFileStore {
   ): { key: string; edited: true };
 }
 
+/**
+ * Options for creating a demo localStorage-backed file store.
+ */
 interface CreateLocalStorageFileStoreOptions {
   storageKey: string;
   initialFiles: Record<string, string>;

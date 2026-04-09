@@ -5,6 +5,9 @@ import { createResultStream } from "./llm-provider-interface";
 import type { AssistantMessage, ToolCallBlock } from "../session/session-types";
 import type { CreateLlmTransportContext, LlmCallInterface } from "./llm-call-interface";
 
+/**
+ * Input used to build the request body for the AI SDK transport adapter.
+ */
 export interface BuildAiSdkBodyOptions<UI_MESSAGE extends UIMessage> {
   chatId: string;
   sessionId?: string;
@@ -13,6 +16,9 @@ export interface BuildAiSdkBodyOptions<UI_MESSAGE extends UIMessage> {
   tools: SerializedTool[];
 }
 
+/**
+ * Options for building an Agent-compatible AI SDK chat transport.
+ */
 export interface CreateAiSdkLlmCallerOptions<UI_MESSAGE extends UIMessage> {
   api: string;
   headers?:
@@ -25,6 +31,9 @@ export interface CreateAiSdkLlmCallerOptions<UI_MESSAGE extends UIMessage> {
   ) => Promise<Record<string, unknown>> | Record<string, unknown>;
 }
 
+/**
+ * Options for wrapping an HTTP endpoint as a runtime LLM provider.
+ */
 export interface CreateAiSdkLlmProviderOptions<
   UI_MESSAGE extends UIMessage,
 > extends CreateAiSdkLlmCallerOptions<UI_MESSAGE> {}

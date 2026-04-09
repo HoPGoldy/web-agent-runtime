@@ -18,17 +18,26 @@ import {
   type RuntimeLogger,
 } from "../runtime/debug";
 
+/**
+ * Options for creating an IndexedDB-backed storage provider.
+ */
 interface IndexedDbAgentStorageOptions {
   dbName: string;
   version?: number;
   loggerOptions?: LoggerOptions;
 }
 
+/**
+ * IndexedDB record shape used for persisted UI message lists.
+ */
 interface StoredMessages<UI_MESSAGE extends UIMessage> {
   sessionId: string;
   messages: UI_MESSAGE[];
 }
 
+/**
+ * IndexedDB record shape used for serialized runtime session data.
+ */
 interface StoredOpaqueSessionData<TSessionData = unknown> {
   sessionId: string;
   data: TSessionData;

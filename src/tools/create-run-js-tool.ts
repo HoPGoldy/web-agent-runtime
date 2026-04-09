@@ -1,9 +1,15 @@
 import type { ToolInterface } from "./tool-interface";
 
+/**
+ * Input accepted by the demo JavaScript execution tool.
+ */
 interface RunJsToolInput {
   code: string;
 }
 
+/**
+ * Options for creating the demo JavaScript execution tool.
+ */
 interface CreateRunJsToolOptions {
   globals?: Record<string, unknown>;
   onConsoleLog?: (...args: unknown[]) => void;

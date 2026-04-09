@@ -8,6 +8,9 @@ import type {
 } from "../session";
 import type { AgentSessionCreateInput } from "../types";
 
+/**
+ * High-level storage contract used by the legacy Agent facade.
+ */
 export interface StorageInterface<UI_MESSAGE extends UIMessage = UIMessage> extends Omit<
   StorageProvider<UI_MESSAGE[]>,
   "createSession" | "getSession" | "listSessions" | "updateSession"

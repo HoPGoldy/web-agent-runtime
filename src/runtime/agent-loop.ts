@@ -77,6 +77,9 @@ function getToolCalls(message: AssistantMessage): ToolCallBlock[] {
   return message.content.filter((block): block is ToolCallBlock => block.type === "toolCall");
 }
 
+/**
+ * Host bindings consumed by the runtime agent loop engine.
+ */
 export interface AgentLoopBindings<THostContext = unknown> {
   logger?: RuntimeLogger;
   llmProvider: LlmProvider<unknown>;
