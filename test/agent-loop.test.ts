@@ -7,7 +7,7 @@ import {
   createAssistantTextMessage,
   createAssistantToolCallMessage,
   createSequenceLlmProvider,
-  createStaticToolProvider,
+  createStaticTools,
 } from "./runtime-test-helpers";
 
 function createStorage(name: string) {
@@ -21,9 +21,7 @@ function readUserText(message: AgentMessage) {
 
   return typeof message.content === "string"
     ? message.content
-    : message.content
-        .map((block) => (block.type === "text" ? block.text : ""))
-        .join("");
+    : message.content.map((block) => (block.type === "text" ? block.text : "")).join("");
 }
 
 describe("agent loop semantics", () => {
@@ -42,7 +40,7 @@ describe("agent loop semantics", () => {
       requests as never,
     );
     let runtimeRef: AgentRuntime | undefined;
-    const toolProvider = createStaticToolProvider([
+    const tools = createStaticTools([
       {
         name: "read",
         description: "read",
@@ -60,7 +58,7 @@ describe("agent loop semantics", () => {
       model: { provider: "proxy", id: "claude-test" },
       llmProvider,
       storage: createStorage(`agent-loop-steer-${crypto.randomUUID()}`),
-      toolProvider,
+      tools,
       systemPrompt: "System prompt",
     });
     runtimeRef = runtime;
@@ -87,7 +85,7 @@ describe("agent loop semantics", () => {
       requests as never,
     );
     let runtimeRef: AgentRuntime | undefined;
-    const toolProvider = createStaticToolProvider([
+    const tools = createStaticTools([
       {
         name: "read",
         description: "read",
@@ -104,7 +102,7 @@ describe("agent loop semantics", () => {
       model: { provider: "proxy", id: "claude-test" },
       llmProvider,
       storage: createStorage(`agent-loop-followup-${crypto.randomUUID()}`),
-      toolProvider,
+      tools,
       systemPrompt: "System prompt",
     });
     runtimeRef = runtime;
@@ -112,11 +110,41 @@ describe("agent loop semantics", () => {
     await runtime.prompt("start");
 
     expect(requests).toHaveLength(3);
-    expect(requests[1]?.messages.map(readUserText).filter(Boolean)).not.toContain(
-      "queued follow-up",
+    expect(requests[1]?.messages.map(readUserText).filter(Boolean)).not.toContain("queued follow-up");
+    expect(requests[2]?.messages.map(readUserText).filter(Boolean)).toContain("queued follow-up");
+  });
+
+  it("fails fast when the model keeps requesting tools without settling", async () => {
+    const llmProvider = createSequenceLlmProvider([
+      createAssistantToolCallMessage({
+        type: "toolCall",
+        id: "tool-call-loop",
+        name: "read",
+        arguments: { key: "app.ts" },
+      }),
+    ]);
+    const runtime = await createAgentRuntime({
+      model: { provider: "proxy", id: "claude-test" },
+      llmProvider,
+      storage: createStorage(`agent-loop-limit-${crypto.randomUUID()}`),
+      tools: createStaticTools([
+        {
+          name: "read",
+          description: "read",
+          inputSchema: { type: "object" },
+          async execute() {
+            return {
+              content: [{ type: "text", text: "tool result" }],
+            };
+          },
+        },
+      ]),
+      systemPrompt: "System prompt",
+    });
+
+    await expect(runtime.prompt("start")).rejects.toThrow(
+      "Agent loop exceeded 12 turns. Possible repeated tool-call cycle.",
     );
-    expect(requests[2]?.messages.map(readUserText).filter(Boolean)).toContain(
-      "queued follow-up",
-    );
+    expect(runtime.state.status).toBe("error");
   });
 });

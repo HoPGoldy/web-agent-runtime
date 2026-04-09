@@ -31,14 +31,14 @@ describe("IndexedDbAgentStorage", () => {
   it("lists sessions by descending updatedAt", async () => {
     const storage = createStorage();
 
-    await storage.createSession({ id: "older", title: "Older" });
-    await storage.createSession({ id: "newer", title: "Newer" });
-    await storage.updateSession("older", {
-      updatedAt: "2024-01-01T00:00:00.000Z",
-    });
-    await storage.updateSession("newer", {
-      updatedAt: "2025-01-01T00:00:00.000Z",
-    });
+    const older = await storage.createSession({ id: "older", title: "Older" });
+    let newer = await storage.createSession({ id: "newer", title: "Newer" });
+
+    for (let attempt = 0; attempt < 5 && newer.updatedAt <= older.updatedAt; attempt += 1) {
+      newer = await storage.updateSession("newer", {
+        title: `Newer ${attempt}`,
+      });
+    }
 
     expect((await storage.listSessions()).map((session) => session.id)).toEqual(["newer", "older"]);
   });

@@ -8,10 +8,7 @@ import {
 
 export const SESSION_DATA_VERSION = RUNTIME_SESSION_DATA_VERSION;
 
-export function createJsonSessionDataCodec(): SessionDataCodec<
-  RuntimeSessionData,
-  RuntimeSessionData
-> {
+export function createJsonSessionDataCodec(): SessionDataCodec<RuntimeSessionData, RuntimeSessionData> {
   return {
     async serialize(data) {
       return cloneRuntimeSessionData(assertRuntimeSessionData(data));

@@ -1,15 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { createAgentRuntime } from "../src/runtime/agent-runtime";
+import type { RuntimeSessionData } from "../src/session/session-types";
 import { IndexedDbAgentStorage } from "../src/storage/indexed-db-agent-storage";
 import {
   createAssistantTextMessage,
   createSequenceLlmProvider,
-  createStaticToolProvider,
+  createStaticTools,
 } from "./runtime-test-helpers";
 
 describe("forked sessions", () => {
   it("creates a new session from a chosen source entry", async () => {
-    const storage = new IndexedDbAgentStorage({
+    const storage = new IndexedDbAgentStorage<never, RuntimeSessionData>({
       dbName: `fork-session-${crypto.randomUUID()}`,
     });
     const runtime = await createAgentRuntime({
@@ -19,7 +20,7 @@ describe("forked sessions", () => {
         createAssistantTextMessage("answer two"),
       ]),
       storage,
-      toolProvider: createStaticToolProvider([]),
+      tools: createStaticTools([]),
       systemPrompt: "System prompt",
     });
 

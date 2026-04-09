@@ -27,11 +27,7 @@ export interface ToolCallBlock {
 }
 
 export type UserContentBlock = TextBlock | ImageBlock;
-export type AssistantContentBlock =
-  | TextBlock
-  | ImageBlock
-  | ThinkingBlock
-  | ToolCallBlock;
+export type AssistantContentBlock = TextBlock | ImageBlock | ThinkingBlock | ToolCallBlock;
 export type ToolResultContentBlock = TextBlock | ImageBlock;
 
 export interface UserMessage {
@@ -74,11 +70,7 @@ export interface CustomMessage<TType extends string = string, TDetails = unknown
   metadata?: Record<string, unknown>;
 }
 
-export type AgentMessage =
-  | UserMessage
-  | AssistantMessage
-  | ToolResultMessage
-  | CustomMessage;
+export type AgentMessage = UserMessage | AssistantMessage | ToolResultMessage | CustomMessage;
 
 export interface SessionEntryBase {
   id: string;
@@ -157,9 +149,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
-export function createRuntimeSessionData(
-  metadata?: Record<string, unknown>,
-): RuntimeSessionData {
+export function createRuntimeSessionData(metadata?: Record<string, unknown>): RuntimeSessionData {
   return {
     version: RUNTIME_SESSION_DATA_VERSION,
     headEntryId: null,
@@ -168,9 +158,7 @@ export function createRuntimeSessionData(
   };
 }
 
-export function cloneRuntimeSessionData(
-  data: RuntimeSessionData,
-): RuntimeSessionData {
+export function cloneRuntimeSessionData(data: RuntimeSessionData): RuntimeSessionData {
   return cloneValue(data);
 }
 
@@ -178,9 +166,7 @@ export function createMessageEntry(input: Omit<MessageEntry, "type">): MessageEn
   return { ...input, type: "message" };
 }
 
-export function createModelChangeEntry(
-  input: Omit<ModelChangeEntry, "type">,
-): ModelChangeEntry {
+export function createModelChangeEntry(input: Omit<ModelChangeEntry, "type">): ModelChangeEntry {
   return { ...input, type: "model_change" };
 }
 
@@ -190,21 +176,15 @@ export function createThinkingLevelChangeEntry(
   return { ...input, type: "thinking_level_change" };
 }
 
-export function createCompactionEntry(
-  input: Omit<CompactionEntry, "type">,
-): CompactionEntry {
+export function createCompactionEntry(input: Omit<CompactionEntry, "type">): CompactionEntry {
   return { ...input, type: "compaction" };
 }
 
-export function createBranchSummaryEntry(
-  input: Omit<BranchSummaryEntry, "type">,
-): BranchSummaryEntry {
+export function createBranchSummaryEntry(input: Omit<BranchSummaryEntry, "type">): BranchSummaryEntry {
   return { ...input, type: "branch_summary" };
 }
 
-export function createHostDataEntry(
-  input: Omit<HostDataEntry, "type">,
-): HostDataEntry {
+export function createHostDataEntry(input: Omit<HostDataEntry, "type">): HostDataEntry {
   return { ...input, type: "host_data" };
 }
 
@@ -233,16 +213,13 @@ export function getSessionEntryLineage(
 
   while (current) {
     lineage.unshift(current);
-    current = current.parentId ? entryMap.get(current.parentId) ?? null : null;
+    current = current.parentId ? (entryMap.get(current.parentId) ?? null) : null;
   }
 
   return lineage;
 }
 
-export function appendSessionEntry(
-  data: RuntimeSessionData,
-  entry: SessionEntry,
-): RuntimeSessionData {
+export function appendSessionEntry(data: RuntimeSessionData, entry: SessionEntry): RuntimeSessionData {
   if (entry.parentId && !getSessionEntry(data, entry.parentId)) {
     throw new Error(`Unknown parent entry: ${entry.parentId}`);
   }
@@ -258,10 +235,7 @@ export function appendSessionEntry(
   };
 }
 
-export function extractBranchSessionData(
-  data: RuntimeSessionData,
-  headEntryId: string,
-): RuntimeSessionData {
+export function extractBranchSessionData(data: RuntimeSessionData, headEntryId: string): RuntimeSessionData {
   const branchEntries = getSessionEntryLineage(data, headEntryId);
   if (branchEntries.length === 0) {
     throw new Error(`Session entry not found: ${headEntryId}`);
@@ -275,9 +249,7 @@ export function extractBranchSessionData(
   };
 }
 
-function createCompactionSummaryMessage(
-  entry: CompactionEntry,
-): CustomMessage<"compaction_summary"> {
+function createCompactionSummaryMessage(entry: CompactionEntry): CustomMessage<"compaction_summary"> {
   return {
     role: "custom",
     customType: "compaction_summary",
@@ -291,9 +263,7 @@ function createCompactionSummaryMessage(
   };
 }
 
-function createBranchSummaryMessage(
-  entry: BranchSummaryEntry,
-): CustomMessage<"branch_summary"> {
+function createBranchSummaryMessage(entry: BranchSummaryEntry): CustomMessage<"branch_summary"> {
   return {
     role: "custom",
     customType: "branch_summary",

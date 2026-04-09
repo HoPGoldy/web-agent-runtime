@@ -1,10 +1,5 @@
 import { createAgentId } from "../types";
-import type {
-  PromptComposer,
-  ToolDefinition,
-  ToolProvider,
-  ToolExecutionMode,
-} from "../providers";
+import type { PromptComposer, ToolDefinition, ToolExecutionMode } from "../providers";
 import type { LlmProvider, ModelRef, ThinkingLevel } from "../providers";
 import {
   buildRuntimeSessionView,
@@ -39,6 +34,7 @@ import {
 } from "./contracts";
 import { AgentLoopEngine } from "./agent-loop";
 import { compactRuntimeSession } from "./compaction";
+import { createRuntimeLogger, traceRuntimeDebug, traceRuntimeInfo, type RuntimeLogger } from "./debug";
 
 function cloneModel(model: ModelRef): ModelRef {
   return {
@@ -76,24 +72,20 @@ function createEmptyState(options: {
   };
 }
 
-class BrowserAgentRuntime<THostContext = unknown, TSessionData = RuntimeSessionData>
-  implements AgentRuntime<THostContext>
-{
+class BrowserAgentRuntime<
+  THostContext = unknown,
+  TSessionData = RuntimeSessionData,
+> implements AgentRuntime<THostContext> {
   private readonly listeners = new Set<(event: RuntimeEvent) => void>();
   private readonly sessionStore: RuntimeSessionStore<TSessionData>;
   private readonly loop: AgentLoopEngine<THostContext>;
   private readonly baseModel: ModelRef;
-  private readonly toolProvider: ToolProvider<RuntimeState, AgentMessage, THostContext>;
+  private readonly tools: Array<ToolDefinition<unknown, unknown, AgentMessage, THostContext>>;
   private readonly llmProvider: LlmProvider<unknown>;
+  private readonly logger?: RuntimeLogger;
   private readonly promptComposer?: PromptComposer<RuntimeState, AgentMessage, THostContext>;
-  private readonly transformContext?: AgentRuntimeOptions<
-    THostContext,
-    TSessionData
-  >["transformContext"];
-  private readonly convertToLlm?: AgentRuntimeOptions<
-    THostContext,
-    TSessionData
-  >["convertToLlm"];
+  private readonly transformContext?: AgentRuntimeOptions<THostContext, TSessionData>["transformContext"];
+  private readonly convertToLlm?: AgentRuntimeOptions<THostContext, TSessionData>["convertToLlm"];
   private readonly getHostContextImpl: () => Promise<THostContext>;
   private readonly beforeToolCall?: (
     context: BeforeToolCallContext<THostContext>,
@@ -111,11 +103,20 @@ class BrowserAgentRuntime<THostContext = unknown, TSessionData = RuntimeSessionD
   readonly sessions = {
     create: async (input?: CreateSessionInput) => {
       this.ensureNotDestroyed();
+      traceRuntimeInfo(this.logger, "runtime:session-create:start", {
+        title: input?.title ?? null,
+      });
       const created = await this.sessionStore.create(input);
+      traceRuntimeDebug(this.logger, "runtime:session-create:store-done", {
+        sessionId: created.session.id,
+      });
       this.sessionData = created.data;
       this._state.session = created.session;
       this.rebuildState();
       this.emit({ type: "session_created", session: created.session });
+      traceRuntimeInfo(this.logger, "runtime:session-create:done", {
+        sessionId: created.session.id,
+      });
       return created.session;
     },
     open: async (sessionId: string) => {
@@ -176,15 +177,10 @@ class BrowserAgentRuntime<THostContext = unknown, TSessionData = RuntimeSessionD
 
   constructor(options: AgentRuntimeOptions<THostContext, TSessionData>) {
     this.baseModel = cloneModel(options.model);
-    this.toolProvider = options.toolProvider as ToolProvider<
-      RuntimeState,
-      AgentMessage,
-      THostContext
-    >;
+    this.tools = options.tools ? [...options.tools] : [];
     this.llmProvider = options.llmProvider;
-    this.promptComposer = options.promptComposer as
-      | PromptComposer<RuntimeState, AgentMessage, THostContext>
-      | undefined;
+    this.logger = createRuntimeLogger(options.loggerOptions);
+    this.promptComposer = options.promptComposer;
     this.transformContext = options.transformContext;
     this.convertToLlm = options.convertToLlm;
     this.beforeToolCall = options.beforeToolCall;
@@ -199,9 +195,8 @@ class BrowserAgentRuntime<THostContext = unknown, TSessionData = RuntimeSessionD
     };
     this.sessionStore = new RuntimeSessionStore(
       options.storage as StorageProvider<TSessionData>,
-      options.sessionDataCodec as
-        | SessionDataCodec<TSessionData, RuntimeSessionData>
-        | undefined,
+      options.sessionDataCodec as SessionDataCodec<TSessionData, RuntimeSessionData> | undefined,
+      this.logger,
     );
     this._state = createEmptyState({
       model: options.model,
@@ -209,6 +204,7 @@ class BrowserAgentRuntime<THostContext = unknown, TSessionData = RuntimeSessionD
       systemPrompt: options.systemPrompt ?? "",
     });
     this.loop = new AgentLoopEngine<THostContext>({
+      logger: this.logger,
       llmProvider: this.llmProvider,
       toolExecutionMode: this.toolExecutionMode,
       getState: () => this._state,
@@ -252,36 +248,24 @@ class BrowserAgentRuntime<THostContext = unknown, TSessionData = RuntimeSessionD
         };
       },
       getTools: async () => {
-        const hostContext = await this.getHostContextImpl();
-        return this.toolProvider.getTools({
-          session: this._state.session,
-          state: this._state,
-          hostContext,
-        }) as Promise<
-          Array<ToolDefinition<unknown, unknown, AgentMessage, THostContext>>
-        >;
+        return this.tools;
       },
       getHostContext: () => this.getHostContextImpl(),
       consumeSteeringMessages: () => {
-        const messages = cloneMessages(
-          this._state.queuedSteeringMessages as AgentMessage[],
-        );
+        const messages = cloneMessages(this._state.queuedSteeringMessages as AgentMessage[]);
         this._state.queuedSteeringMessages = [];
         this.emitStateChanged();
         return messages;
       },
       consumeFollowUpMessages: () => {
-        const messages = cloneMessages(
-          this._state.queuedFollowUpMessages as AgentMessage[],
-        );
+        const messages = cloneMessages(this._state.queuedFollowUpMessages as AgentMessage[]);
         this._state.queuedFollowUpMessages = [];
         this.emitStateChanged();
         return messages;
       },
       beforeToolCall: async (context) =>
         this.beforeToolCall?.(context as BeforeToolCallContext<THostContext>),
-      afterToolCall: async (context) =>
-        this.afterToolCall?.(context as AfterToolCallContext<THostContext>),
+      afterToolCall: async (context) => this.afterToolCall?.(context as AfterToolCallContext<THostContext>),
     });
   }
 
@@ -297,8 +281,18 @@ class BrowserAgentRuntime<THostContext = unknown, TSessionData = RuntimeSessionD
 
   async prompt(input: PromptInput) {
     this.ensureNotDestroyed();
+    traceRuntimeInfo(this.logger, "runtime:prompt:start", {
+      hasSession: Boolean(this._state.session),
+      inputType: typeof input === "string" ? "string" : Array.isArray(input) ? "array" : "message",
+    });
     await this.ensureSession();
+    traceRuntimeDebug(this.logger, "runtime:prompt:session-ready", {
+      sessionId: this._state.session?.id,
+    });
     await this.loop.run(input);
+    traceRuntimeInfo(this.logger, "runtime:prompt:done", {
+      messageCount: this._state.messages.length,
+    });
   }
 
   async continue() {
@@ -316,10 +310,7 @@ class BrowserAgentRuntime<THostContext = unknown, TSessionData = RuntimeSessionD
     this.ensureNotDestroyed();
     const messages = this.normalizeQueuedMessages(input);
     if (this.loop.isRunning) {
-      this._state.queuedSteeringMessages = [
-        ...this._state.queuedSteeringMessages,
-        ...messages,
-      ];
+      this._state.queuedSteeringMessages = [...this._state.queuedSteeringMessages, ...messages];
       this.emitStateChanged();
       return;
     }
@@ -331,10 +322,7 @@ class BrowserAgentRuntime<THostContext = unknown, TSessionData = RuntimeSessionD
     this.ensureNotDestroyed();
     const messages = this.normalizeQueuedMessages(input);
     if (this.loop.isRunning) {
-      this._state.queuedFollowUpMessages = [
-        ...this._state.queuedFollowUpMessages,
-        ...messages,
-      ];
+      this._state.queuedFollowUpMessages = [...this._state.queuedFollowUpMessages, ...messages];
       this.emitStateChanged();
       return;
     }
@@ -417,17 +405,29 @@ class BrowserAgentRuntime<THostContext = unknown, TSessionData = RuntimeSessionD
 
   private async ensureSession() {
     if (this._state.session) {
+      traceRuntimeDebug(this.logger, "runtime:ensure-session:existing", {
+        sessionId: this._state.session.id,
+      });
       return this._state.session;
     }
 
+    traceRuntimeInfo(this.logger, "runtime:ensure-session:create");
     return this.sessions.create({ title: "Untitled Session" });
   }
 
   private async appendMessage(message: AgentMessage) {
     const session = await this.ensureSession();
+    traceRuntimeDebug(this.logger, "runtime:append-message:start", {
+      role: message.role,
+      sessionId: session.id,
+    });
     this.sessionData = appendMessageToSessionData(this.sessionData, message);
     await this.persistSessionData(session.id);
     this.rebuildState();
+    traceRuntimeDebug(this.logger, "runtime:append-message:done", {
+      role: message.role,
+      messageCount: this._state.messages.length,
+    });
   }
 
   private async persistSessionData(sessionId = this._state.session?.id) {
@@ -435,12 +435,17 @@ class BrowserAgentRuntime<THostContext = unknown, TSessionData = RuntimeSessionD
       return;
     }
 
-    const commit = await this.sessionStore.save(
+    traceRuntimeDebug(this.logger, "runtime:persist-session:start", {
       sessionId,
-      this.sessionData,
-      this._state.session.revision,
-    );
+      entryCount: this.sessionData.entries.length,
+      expectedRevision: this._state.session.revision,
+    });
+    const commit = await this.sessionStore.save(sessionId, this.sessionData, this._state.session.revision);
     this._state.session = commit.session;
+    traceRuntimeDebug(this.logger, "runtime:persist-session:done", {
+      sessionId,
+      revision: commit.revision,
+    });
   }
 
   private rebuildState() {
@@ -460,12 +465,8 @@ class BrowserAgentRuntime<THostContext = unknown, TSessionData = RuntimeSessionD
       state: {
         ...this._state,
         messages: cloneMessages(this._state.messages),
-        queuedSteeringMessages: cloneMessages(
-          this._state.queuedSteeringMessages as AgentMessage[],
-        ),
-        queuedFollowUpMessages: cloneMessages(
-          this._state.queuedFollowUpMessages as AgentMessage[],
-        ),
+        queuedSteeringMessages: cloneMessages(this._state.queuedSteeringMessages as AgentMessage[]),
+        queuedFollowUpMessages: cloneMessages(this._state.queuedFollowUpMessages as AgentMessage[]),
       },
     });
   }
@@ -483,38 +484,23 @@ class BrowserAgentRuntime<THostContext = unknown, TSessionData = RuntimeSessionD
   }
 }
 
-function appendMessageToSessionData(
-  sessionData: RuntimeSessionData,
-  message: AgentMessage,
-) {
+function appendMessageToSessionData(sessionData: RuntimeSessionData, message: AgentMessage) {
   return createMessageEntryData(sessionData, message);
 }
 
-function createMessageEntryData(
-  sessionData: RuntimeSessionData,
-  message: AgentMessage,
-) {
+function createMessageEntryData(sessionData: RuntimeSessionData, message: AgentMessage) {
   return appendSessionMessage(sessionData, message);
 }
 
-function appendSessionMessage(
-  sessionData: RuntimeSessionData,
-  message: AgentMessage,
-) {
+function appendSessionMessage(sessionData: RuntimeSessionData, message: AgentMessage) {
   return createMessageSessionData(sessionData, message);
 }
 
-function createMessageSessionData(
-  sessionData: RuntimeSessionData,
-  message: AgentMessage,
-) {
+function createMessageSessionData(sessionData: RuntimeSessionData, message: AgentMessage) {
   return appendSessionEntryWithMessage(sessionData, message);
 }
 
-function appendSessionEntryWithMessage(
-  sessionData: RuntimeSessionData,
-  message: AgentMessage,
-) {
+function appendSessionEntryWithMessage(sessionData: RuntimeSessionData, message: AgentMessage) {
   return appendSessionEntry(
     sessionData,
     createMessageEntry({
@@ -528,9 +514,8 @@ function appendSessionEntryWithMessage(
 
 import { appendSessionEntry } from "../session/session-types";
 
-export async function createAgentRuntime<
-  THostContext = unknown,
-  TSessionData = RuntimeSessionData,
->(options: AgentRuntimeOptions<THostContext, TSessionData>) {
+export async function createAgentRuntime<THostContext = unknown, TSessionData = RuntimeSessionData>(
+  options: AgentRuntimeOptions<THostContext, TSessionData>,
+) {
   return new BrowserAgentRuntime(options);
 }

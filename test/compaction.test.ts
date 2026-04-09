@@ -1,15 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { createAgentRuntime } from "../src/runtime/agent-runtime";
+import type { RuntimeSessionData } from "../src/session/session-types";
 import { IndexedDbAgentStorage } from "../src/storage/indexed-db-agent-storage";
 import {
   createAssistantTextMessage,
   createSequenceLlmProvider,
-  createStaticToolProvider,
+  createStaticTools,
 } from "./runtime-test-helpers";
 
 describe("compaction", () => {
   it("persists a compaction entry and rebuilds active context", async () => {
-    const storage = new IndexedDbAgentStorage({
+    const storage = new IndexedDbAgentStorage<never, RuntimeSessionData>({
       dbName: `compaction-${crypto.randomUUID()}`,
     });
     const runtime = await createAgentRuntime({
@@ -21,7 +22,7 @@ describe("compaction", () => {
         createAssistantTextMessage("summary"),
       ]),
       storage,
-      toolProvider: createStaticToolProvider([]),
+      tools: createStaticTools([]),
       systemPrompt: "System prompt",
     });
 
@@ -38,8 +39,6 @@ describe("compaction", () => {
       customType: "compaction_summary",
     });
     expect(runtime.state.messages).toHaveLength(3);
-    expect(
-      stored?.data.entries.some((entry) => entry.type === "compaction"),
-    ).toBe(true);
+    expect(stored?.data.entries.some((entry) => entry.type === "compaction")).toBe(true);
   });
 });

@@ -1,19 +1,9 @@
 import { DefaultChatTransport, type UIMessage } from "ai";
 import type { SerializedTool } from "../tools/tool-interface";
-import type {
-  AssistantStreamEvent,
-  LlmContext,
-  LlmProvider,
-} from "./llm-provider-interface";
+import type { AssistantStreamEvent, LlmContext, LlmProvider } from "./llm-provider-interface";
 import { createResultStream } from "./llm-provider-interface";
-import type {
-  AssistantMessage,
-  ToolCallBlock,
-} from "../session/session-types";
-import type {
-  CreateLlmTransportContext,
-  LlmCallInterface,
-} from "./llm-call-interface";
+import type { AssistantMessage, ToolCallBlock } from "../session/session-types";
+import type { CreateLlmTransportContext, LlmCallInterface } from "./llm-call-interface";
 
 export interface BuildAiSdkBodyOptions<UI_MESSAGE extends UIMessage> {
   chatId: string;
@@ -28,18 +18,16 @@ export interface CreateAiSdkLlmCallerOptions<UI_MESSAGE extends UIMessage> {
   headers?:
     | Record<string, string>
     | Headers
-    | (() =>
-        | Record<string, string>
-        | Headers
-        | Promise<Record<string, string> | Headers>);
+    | (() => Record<string, string> | Headers | Promise<Record<string, string> | Headers>);
   fetch?: typeof globalThis.fetch;
   buildBody?: (
     options: BuildAiSdkBodyOptions<UI_MESSAGE>,
   ) => Promise<Record<string, unknown>> | Record<string, unknown>;
 }
 
-export interface CreateAiSdkLlmProviderOptions<UI_MESSAGE extends UIMessage>
-  extends CreateAiSdkLlmCallerOptions<UI_MESSAGE> {}
+export interface CreateAiSdkLlmProviderOptions<
+  UI_MESSAGE extends UIMessage,
+> extends CreateAiSdkLlmCallerOptions<UI_MESSAGE> {}
 
 export function createAiSdkLlmCaller<UI_MESSAGE extends UIMessage = UIMessage>(
   options: CreateAiSdkLlmCallerOptions<UI_MESSAGE>,
@@ -83,10 +71,7 @@ async function resolveHeaders(
   headers:
     | Record<string, string>
     | Headers
-    | (() =>
-        | Record<string, string>
-        | Headers
-        | Promise<Record<string, string> | Headers>)
+    | (() => Record<string, string> | Headers | Promise<Record<string, string> | Headers>)
     | undefined,
 ) {
   if (typeof headers === "function") {
@@ -110,16 +95,12 @@ function buildDefaultProviderBody<TMessage>(options: {
   };
 }
 
-function normalizeProviderPayload(
-  payload: unknown,
-): {
+function normalizeProviderPayload(payload: unknown): {
   events: Array<AssistantStreamEvent<AssistantMessage, ToolCallBlock>>;
   result: AssistantMessage;
 } {
   if (Array.isArray(payload)) {
-    const events = payload as Array<
-      AssistantStreamEvent<AssistantMessage, ToolCallBlock>
-    >;
+    const events = payload as Array<AssistantStreamEvent<AssistantMessage, ToolCallBlock>>;
     const result = getFinalMessageFromEvents(events);
     return { events, result };
   }
@@ -155,9 +136,7 @@ function normalizeProviderPayload(
   throw new Error("Invalid AI SDK provider payload");
 }
 
-function getFinalMessageFromEvents(
-  events: Array<AssistantStreamEvent<AssistantMessage, ToolCallBlock>>,
-) {
+function getFinalMessageFromEvents(events: Array<AssistantStreamEvent<AssistantMessage, ToolCallBlock>>) {
   const terminalEvent = [...events]
     .reverse()
     .find((event) => event.type === "done" || event.type === "error");
@@ -165,9 +144,7 @@ function getFinalMessageFromEvents(
     throw new Error("Missing terminal assistant event");
   }
 
-  return terminalEvent.type === "done"
-    ? terminalEvent.message
-    : terminalEvent.error;
+  return terminalEvent.type === "done" ? terminalEvent.message : terminalEvent.error;
 }
 
 export function createAiSdkLlmProvider<UI_MESSAGE extends UIMessage = UIMessage>(

@@ -20,17 +20,11 @@ function extractTextFromMessage(message: AgentMessage) {
     case "custom":
       return typeof message.content === "string"
         ? message.content
-        : message.content
-            .map((block) => (block.type === "text" ? block.text : ""))
-            .join(" ");
+        : message.content.map((block) => (block.type === "text" ? block.text : "")).join(" ");
     case "assistant":
-      return message.content
-        .map((block) => (block.type === "text" ? block.text : ""))
-        .join(" ");
+      return message.content.map((block) => (block.type === "text" ? block.text : "")).join(" ");
     case "toolResult":
-      return message.content
-        .map((block) => (block.type === "text" ? block.text : ""))
-        .join(" ");
+      return message.content.map((block) => (block.type === "text" ? block.text : "")).join(" ");
   }
 }
 
@@ -38,11 +32,7 @@ function createCloneId() {
   return `entry-${createAgentId()}`;
 }
 
-function cloneEntryWithParent(
-  entry: SessionEntry,
-  id: string,
-  parentId: string | null,
-): SessionEntry {
+function cloneEntryWithParent(entry: SessionEntry, id: string, parentId: string | null): SessionEntry {
   return {
     ...entry,
     id,
@@ -97,9 +87,7 @@ export async function compactRuntimeSession(options: {
   result: CompactionResult;
 }> {
   const lineage = getSessionEntryLineage(options.data);
-  const messageEntries = lineage.filter(
-    (entry): entry is MessageEntry => entry.type === "message",
-  );
+  const messageEntries = lineage.filter((entry): entry is MessageEntry => entry.type === "message");
   if (messageEntries.length === 0) {
     return {
       data: options.data,
@@ -113,9 +101,7 @@ export async function compactRuntimeSession(options: {
 
   const keepCount = messageEntries.length > 2 ? 2 : 1;
   const firstKeptMessage = messageEntries[messageEntries.length - keepCount]!;
-  const firstKeptIndex = lineage.findIndex(
-    (entry) => entry.id === firstKeptMessage.id,
-  );
+  const firstKeptIndex = lineage.findIndex((entry) => entry.id === firstKeptMessage.id);
   const keptEntries = lineage.slice(firstKeptIndex);
   const summarizedMessages = messageEntries
     .slice(0, Math.max(0, messageEntries.length - keepCount))
@@ -126,9 +112,8 @@ export async function compactRuntimeSession(options: {
     thinkingLevel: options.thinkingLevel,
     systemPrompt: options.systemPrompt,
     sessionId: options.sessionId,
-    messages: summarizedMessages.length > 0
-      ? summarizedMessages
-      : messageEntries.map((entry) => entry.message),
+    messages:
+      summarizedMessages.length > 0 ? summarizedMessages : messageEntries.map((entry) => entry.message),
     customInstructions: options.compactionOptions?.customInstructions,
   });
   const compactionEntry = createCompactionEntry({
@@ -137,10 +122,7 @@ export async function compactRuntimeSession(options: {
     timestamp: new Date().toISOString(),
     summary,
     firstKeptEntryId: firstKeptMessage.id,
-    tokensBefore: summarizedMessages
-      .map(extractTextFromMessage)
-      .join(" ")
-      .length,
+    tokensBefore: summarizedMessages.map(extractTextFromMessage).join(" ").length,
   });
 
   let nextData = appendSessionEntry(options.data, compactionEntry);

@@ -9,10 +9,19 @@ import type {
   StorageProvider,
   UpdateSessionInput,
 } from "../session";
+import {
+  createRuntimeLogger,
+  traceRuntimeDebug,
+  traceRuntimeError,
+  traceRuntimeWarning,
+  type LoggerOptions,
+  type RuntimeLogger,
+} from "../runtime/debug";
 
 interface IndexedDbAgentStorageOptions {
   dbName: string;
   version?: number;
+  loggerOptions?: LoggerOptions;
 }
 
 interface StoredMessages<UI_MESSAGE extends UIMessage> {
@@ -30,10 +39,7 @@ function createRevision() {
 }
 
 function assertRevision(session: SessionRecord, options?: MutationOptions) {
-  if (
-    options?.expectedRevision !== undefined &&
-    session.revision !== options.expectedRevision
-  ) {
+  if (options?.expectedRevision !== undefined && session.revision !== options.expectedRevision) {
     throw new Error(`Revision conflict for session: ${session.id}`);
   }
 }
@@ -59,14 +65,20 @@ export class IndexedDbAgentStorage<
 > implements StorageProvider<TSessionData> {
   private readonly dbName: string;
   private readonly version: number;
+  private readonly logger?: RuntimeLogger;
   private dbPromise: Promise<IDBDatabase> | null = null;
 
   constructor(options: IndexedDbAgentStorageOptions) {
     this.dbName = options.dbName;
     this.version = options.version ?? 2;
+    this.logger = createRuntimeLogger(options.loggerOptions);
   }
 
   async createSession(input: AgentSessionCreateInput | CreateSessionInput = {}) {
+    traceRuntimeDebug(this.logger, "storage:indexeddb:create-session:start", {
+      dbName: this.dbName,
+      title: input.title ?? null,
+    });
     const now = new Date().toISOString();
     const metadata = "metadata" in input ? input.metadata : undefined;
     const session: SessionRecord = {
@@ -79,18 +91,27 @@ export class IndexedDbAgentStorage<
     };
 
     const db = await this.getDb();
+    traceRuntimeDebug(this.logger, "storage:indexeddb:create-session:db-ready", {
+      dbName: this.dbName,
+      sessionId: session.id,
+    });
     const transaction = db.transaction(["sessions"], "readwrite");
     transaction.objectStore("sessions").put(session);
+    traceRuntimeDebug(this.logger, "storage:indexeddb:create-session:put-dispatched", {
+      sessionId: session.id,
+    });
     await transactionToPromise(transaction);
+    traceRuntimeDebug(this.logger, "storage:indexeddb:create-session:done", {
+      sessionId: session.id,
+      revision: session.revision,
+    });
     return session;
   }
 
   async getSession(id: string) {
     const db = await this.getDb();
     const transaction = db.transaction(["sessions"], "readonly");
-    const session = await requestToPromise(
-      transaction.objectStore("sessions").get(id),
-    );
+    const session = await requestToPromise(transaction.objectStore("sessions").get(id));
     await transactionToPromise(transaction);
     return (session ?? null) as SessionRecord | null;
   }
@@ -98,20 +119,12 @@ export class IndexedDbAgentStorage<
   async listSessions() {
     const db = await this.getDb();
     const transaction = db.transaction(["sessions"], "readonly");
-    const sessions = await requestToPromise(
-      transaction.objectStore("sessions").getAll(),
-    );
+    const sessions = await requestToPromise(transaction.objectStore("sessions").getAll());
     await transactionToPromise(transaction);
-    return (sessions as SessionRecord[]).sort((left, right) =>
-      right.updatedAt.localeCompare(left.updatedAt),
-    );
+    return (sessions as SessionRecord[]).sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
   }
 
-  async updateSession(
-    id: string,
-    patch: UpdateSessionInput,
-    options?: MutationOptions,
-  ) {
+  async updateSession(id: string, patch: UpdateSessionInput, options?: MutationOptions) {
     const current = await this.getSession(id);
     if (!current) {
       throw new Error(`Session not found: ${id}`);
@@ -135,10 +148,7 @@ export class IndexedDbAgentStorage<
 
   async deleteSession(id: string) {
     const db = await this.getDb();
-    const transaction = db.transaction(
-      ["sessions", "messages", "sessionData"],
-      "readwrite",
-    );
+    const transaction = db.transaction(["sessions", "messages", "sessionData"], "readwrite");
     transaction.objectStore("sessions").delete(id);
     transaction.objectStore("messages").delete(id);
     transaction.objectStore("sessionData").delete(id);
@@ -153,9 +163,7 @@ export class IndexedDbAgentStorage<
 
     const db = await this.getDb();
     const transaction = db.transaction(["sessionData"], "readonly");
-    const record = await requestToPromise(
-      transaction.objectStore("sessionData").get(sessionId),
-    );
+    const record = await requestToPromise(transaction.objectStore("sessionData").get(sessionId));
     await transactionToPromise(transaction);
     const stored = record as StoredOpaqueSessionData<TSessionData> | undefined;
     if (!stored) {
@@ -168,11 +176,7 @@ export class IndexedDbAgentStorage<
     } as StoredSessionData<TSessionData>;
   }
 
-  async saveSessionData(
-    sessionId: string,
-    data: TSessionData,
-    options?: MutationOptions,
-  ) {
+  async saveSessionData(sessionId: string, data: TSessionData, options?: MutationOptions) {
     const current = await this.getSession(sessionId);
     if (!current) {
       throw new Error(`Session not found: ${sessionId}`);
@@ -186,10 +190,7 @@ export class IndexedDbAgentStorage<
       revision: createRevision(),
     };
     const db = await this.getDb();
-    const transaction = db.transaction(
-      ["sessions", "sessionData"],
-      "readwrite",
-    );
+    const transaction = db.transaction(["sessions", "sessionData"], "readwrite");
     transaction.objectStore("sessions").put(nextSession);
     transaction.objectStore("sessionData").put({
       sessionId,
@@ -206,19 +207,12 @@ export class IndexedDbAgentStorage<
   async loadMessages(id: string) {
     const db = await this.getDb();
     const transaction = db.transaction(["messages"], "readonly");
-    const record = await requestToPromise(
-      transaction.objectStore("messages").get(id),
-    );
+    const record = await requestToPromise(transaction.objectStore("messages").get(id));
     await transactionToPromise(transaction);
-    return ((record as StoredMessages<UI_MESSAGE> | undefined)?.messages ??
-      []) as UI_MESSAGE[];
+    return ((record as StoredMessages<UI_MESSAGE> | undefined)?.messages ?? []) as UI_MESSAGE[];
   }
 
-  async saveMessages(
-    id: string,
-    messages: UI_MESSAGE[],
-    _options?: MutationOptions,
-  ) {
+  async saveMessages(id: string, messages: UI_MESSAGE[], _options?: MutationOptions) {
     const db = await this.getDb();
     const transaction = db.transaction(["messages"], "readwrite");
     transaction.objectStore("messages").put({
@@ -231,9 +225,16 @@ export class IndexedDbAgentStorage<
   private getDb() {
     if (!this.dbPromise) {
       this.dbPromise = new Promise<IDBDatabase>((resolve, reject) => {
+        traceRuntimeDebug(this.logger, "storage:indexeddb:get-db:open:start", {
+          dbName: this.dbName,
+          version: this.version,
+        });
         const request = indexedDB.open(this.dbName, this.version);
 
         request.onupgradeneeded = () => {
+          traceRuntimeDebug(this.logger, "storage:indexeddb:get-db:open:upgrade-needed", {
+            dbName: this.dbName,
+          });
           const db = request.result;
           if (!db.objectStoreNames.contains("sessions")) {
             db.createObjectStore("sessions", { keyPath: "id" });
@@ -246,8 +247,25 @@ export class IndexedDbAgentStorage<
           }
         };
 
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error);
+        request.onblocked = () => {
+          traceRuntimeWarning(this.logger, "storage:indexeddb:get-db:open:blocked", {
+            dbName: this.dbName,
+          });
+        };
+
+        request.onsuccess = () => {
+          traceRuntimeDebug(this.logger, "storage:indexeddb:get-db:open:success", {
+            dbName: this.dbName,
+          });
+          resolve(request.result);
+        };
+        request.onerror = () => {
+          traceRuntimeError(this.logger, "storage:indexeddb:get-db:open:error", {
+            dbName: this.dbName,
+            message: request.error?.message ?? String(request.error),
+          });
+          reject(request.error);
+        };
       });
     }
 

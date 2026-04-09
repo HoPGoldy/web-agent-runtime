@@ -3,9 +3,9 @@ import type {
   ModelRef,
   PromptComposer,
   ThinkingLevel,
+  ToolDefinition,
   ToolExecutionMode,
   ToolExecutionResult,
-  ToolProvider,
 } from "../providers";
 import type {
   CreateSessionInput,
@@ -14,10 +14,8 @@ import type {
   StorageProvider,
   UpdateSessionInput,
 } from "../session";
-import type {
-  AgentMessage,
-  AssistantMessage,
-} from "../session/session-types";
+import type { AgentMessage, AssistantMessage } from "../session/session-types";
+import type { LoggerOptions } from "./debug";
 
 export type PromptInput = string | AgentMessage | AgentMessage[];
 
@@ -26,9 +24,7 @@ export type TransformContext = (
   signal?: AbortSignal,
 ) => Promise<AgentMessage[]> | AgentMessage[];
 
-export type ConvertToLlm = (
-  messages: AgentMessage[],
-) => Promise<unknown[]> | unknown[];
+export type ConvertToLlm = (messages: AgentMessage[]) => Promise<unknown[]> | unknown[];
 
 export interface ForkSessionInput {
   sourceSessionId: string;
@@ -162,9 +158,10 @@ export interface AgentRuntimeOptions<THostContext = unknown, TSessionData = unkn
   llmProvider: LlmProvider<unknown>;
   storage: StorageProvider<TSessionData>;
   sessionDataCodec?: SessionDataCodec<TSessionData, unknown>;
-  toolProvider: ToolProvider<RuntimeState, unknown, THostContext>;
+  loggerOptions?: LoggerOptions;
+  tools?: Array<ToolDefinition<unknown, unknown, AgentMessage, THostContext>>;
   systemPrompt?: string;
-  promptComposer?: PromptComposer<RuntimeState, unknown, THostContext>;
+  promptComposer?: PromptComposer<RuntimeState, AgentMessage, THostContext>;
   transformContext?: TransformContext;
   convertToLlm?: ConvertToLlm;
   toolExecution?: ToolExecutionMode;

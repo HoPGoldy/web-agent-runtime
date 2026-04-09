@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { createAiSdkLlmProvider } from "../src/llm/create-ai-sdk-llm-caller";
+import type { LlmProvider } from "../src/providers";
 import type { AssistantMessage, UserMessage } from "../src/session/session-types";
 
 function createUserMessage(text: string): UserMessage {
@@ -52,7 +53,7 @@ describe("LLM provider contract", () => {
     const provider = createAiSdkLlmProvider({
       api: "/api/chat",
       fetch: fetchMock,
-    });
+    }) as LlmProvider<unknown>;
 
     const stream = await provider.stream({
       model: { provider: "proxy", id: "claude-test" },
@@ -76,14 +77,15 @@ describe("LLM provider contract", () => {
     const assistantMessage = createAssistantMessage("fallback");
     const provider = createAiSdkLlmProvider({
       api: "/api/chat",
-      fetch: vi.fn(async () =>
-        new Response(
-          JSON.stringify({
-            message: assistantMessage,
-          }),
-        ),
+      fetch: vi.fn(
+        async () =>
+          new Response(
+            JSON.stringify({
+              message: assistantMessage,
+            }),
+          ),
       ),
-    });
+    }) as LlmProvider<unknown>;
 
     const stream = await provider.stream({
       model: { provider: "proxy", id: "claude-test" },

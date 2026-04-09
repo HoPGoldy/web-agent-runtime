@@ -1,6 +1,7 @@
 import type { UIMessage } from "ai";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { LlmCallInterface } from "../src/llm/llm-call-interface";
+import type { SessionRecord } from "../src/session";
 import type { StorageInterface } from "../src/storage/storage-interface";
 import type { ToolInterface } from "../src/tools/tool-interface";
 import type { AgentEvent, AgentSession } from "../src/types";
@@ -78,18 +79,19 @@ function createMessage(id: string) {
 }
 
 function createStorage() {
-  const sessions = new Map<string, AgentSession>();
+  const sessions = new Map<string, SessionRecord>();
   const messages = new Map<string, UIMessage[]>();
   const saveCalls: Array<{ id: string; messages: UIMessage[] }> = [];
 
   const storage: StorageInterface<UIMessage> = {
     createSession: vi.fn(async (input = {}) => {
       const now = new Date().toISOString();
-      const session: AgentSession = {
+      const session: SessionRecord = {
         id: input.id ?? `session-${sessions.size + 1}`,
         title: input.title ?? "Untitled Session",
         createdAt: now,
         updatedAt: now,
+        revision: `revision-${sessions.size + 1}`,
       };
       sessions.set(session.id, session);
       return session;
@@ -102,10 +104,11 @@ function createStorage() {
         throw new Error(`Session not found: ${id}`);
       }
 
-      const next: AgentSession = {
+      const next: SessionRecord = {
         ...current,
         ...patch,
-        updatedAt: patch.updatedAt ?? current.updatedAt,
+        updatedAt: new Date().toISOString(),
+        revision: `${current.revision}-next`,
       };
       sessions.set(id, next);
       return next;
@@ -113,6 +116,29 @@ function createStorage() {
     deleteSession: vi.fn(async (id: string) => {
       sessions.delete(id);
       messages.delete(id);
+    }),
+    loadSessionData: vi.fn(async (id: string) => {
+      const session = sessions.get(id);
+      if (!session) {
+        return null;
+      }
+
+      return {
+        session,
+        data: messages.get(id)?.slice() ?? [],
+      };
+    }),
+    saveSessionData: vi.fn(async (id: string, data: UIMessage[]) => {
+      const session = sessions.get(id);
+      if (!session) {
+        throw new Error(`Session not found: ${id}`);
+      }
+
+      messages.set(id, data.slice());
+      return {
+        session,
+        revision: session.revision,
+      };
     }),
     loadMessages: vi.fn(async (id: string) => messages.get(id)?.slice() ?? []),
     saveMessages: vi.fn(async (id: string, nextMessages: UIMessage[]) => {
@@ -169,8 +195,12 @@ describe("Agent", () => {
       createdAt: "2024-01-01T00:00:00.000Z",
       updatedAt: "2024-01-01T00:00:00.000Z",
     };
+    const existingRecord: SessionRecord = {
+      ...existingSession,
+      revision: "revision-1",
+    };
     const existingMessage = createMessage("message-1");
-    sessions.set(existingSession.id, existingSession);
+    sessions.set(existingRecord.id, existingRecord);
     messages.set(existingSession.id, [existingMessage]);
     const agent = new Agent({ storage, llmCaller });
 

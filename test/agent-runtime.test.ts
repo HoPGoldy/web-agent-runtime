@@ -4,7 +4,7 @@ import { IndexedDbAgentStorage } from "../src/storage/indexed-db-agent-storage";
 import {
   createAssistantTextMessage,
   createSequenceLlmProvider,
-  createStaticToolProvider,
+  createStaticTools,
 } from "./runtime-test-helpers";
 
 function createStorage(name: string) {
@@ -14,14 +14,12 @@ function createStorage(name: string) {
 describe("agent runtime", () => {
   it("creates a session on first prompt, emits events, and persists session data", async () => {
     const storage = createStorage(`agent-runtime-${crypto.randomUUID()}`);
-    const llmProvider = createSequenceLlmProvider([
-      createAssistantTextMessage("hello back"),
-    ]);
+    const llmProvider = createSequenceLlmProvider([createAssistantTextMessage("hello back")]);
     const runtime = await createAgentRuntime({
       model: { provider: "proxy", id: "claude-test" },
       llmProvider,
       storage,
-      toolProvider: createStaticToolProvider([]),
+      tools: createStaticTools([]),
       systemPrompt: "System prompt",
     });
     const eventTypes: string[] = [];
@@ -53,11 +51,9 @@ describe("agent runtime", () => {
     const storage = createStorage(`agent-runtime-open-${crypto.randomUUID()}`);
     const runtimeA = await createAgentRuntime({
       model: { provider: "proxy", id: "claude-test" },
-      llmProvider: createSequenceLlmProvider([
-        createAssistantTextMessage("first answer"),
-      ]),
+      llmProvider: createSequenceLlmProvider([createAssistantTextMessage("first answer")]),
       storage,
-      toolProvider: createStaticToolProvider([]),
+      tools: createStaticTools([]),
       systemPrompt: "System prompt",
     });
 
@@ -65,11 +61,9 @@ describe("agent runtime", () => {
 
     const runtimeB = await createAgentRuntime({
       model: { provider: "proxy", id: "claude-test" },
-      llmProvider: createSequenceLlmProvider([
-        createAssistantTextMessage("second answer"),
-      ]),
+      llmProvider: createSequenceLlmProvider([createAssistantTextMessage("second answer")]),
       storage,
-      toolProvider: createStaticToolProvider([]),
+      tools: createStaticTools([]),
       systemPrompt: "System prompt",
     });
 

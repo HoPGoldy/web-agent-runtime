@@ -1,0 +1,26 @@
+{
+  "name": "@oneai/web-agent-demo",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "predev": "npm --prefix .. run build",
+    "dev": "vite",
+    "prebuild": "npm --prefix .. run build",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@oneai/web-agent": "file:..",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "@vitejs/plugin-react": "^5.1.0",
+    "typescript": "^6.0.2",
+    "vite": "^7.1.12"
+  }
+}

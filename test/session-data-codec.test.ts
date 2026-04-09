@@ -1,12 +1,10 @@
 import { describe, expect, it } from "vitest";
-import {
-  createJsonSessionDataCodec,
-  SESSION_DATA_VERSION,
-} from "../src/session/session-data-codec";
+import { createJsonSessionDataCodec, SESSION_DATA_VERSION } from "../src/session/session-data-codec";
 import {
   appendSessionEntry,
   createMessageEntry,
   createRuntimeSessionData,
+  type RuntimeSessionData,
 } from "../src/session/session-types";
 
 describe("session data codec", () => {
@@ -41,7 +39,7 @@ describe("session data codec", () => {
         version: SESSION_DATA_VERSION,
         headEntryId: null,
         entries: [{ type: "message" }],
-      }),
+      } as unknown as RuntimeSessionData),
     ).rejects.toThrow("Invalid runtime session data");
   });
 

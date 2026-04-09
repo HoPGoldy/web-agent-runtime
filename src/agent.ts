@@ -1,15 +1,9 @@
-import {
-  lastAssistantMessageIsCompleteWithToolCalls,
-  type UIMessage,
-} from "ai";
+import { lastAssistantMessageIsCompleteWithToolCalls, type UIMessage } from "ai";
 import { RuntimeChat } from "./runtime-chat";
 import type { LlmCallInterface } from "./llm/llm-call-interface";
 import type { StorageInterface } from "./storage/storage-interface";
 import type { SessionRecord } from "./session";
-import type {
-  ToolInterface,
-  ToolExecutionContext,
-} from "./tools/tool-interface";
+import type { ToolInterface, ToolExecutionContext } from "./tools/tool-interface";
 import {
   type AgentEvent,
   type AgentSession,
@@ -28,10 +22,7 @@ export interface AgentOptions<UI_MESSAGE extends UIMessage = UIMessage> {
   sessionTitle?: string;
 }
 
-type PromptInput<UI_MESSAGE extends UIMessage> =
-  | string
-  | UI_MESSAGE
-  | UI_MESSAGE[];
+type PromptInput<UI_MESSAGE extends UIMessage> = string | UI_MESSAGE | UI_MESSAGE[];
 
 interface RuntimeToolCall {
   toolCallId: string;
@@ -43,13 +34,8 @@ interface RuntimeToolCall {
 export class Agent<UI_MESSAGE extends UIMessage = UIMessage> {
   private readonly storage: StorageInterface<UI_MESSAGE>;
   private readonly llmCaller: LlmCallInterface<UI_MESSAGE>;
-  private readonly listeners = new Set<
-    (event: AgentEvent<UI_MESSAGE>) => void
-  >();
-  private readonly toolMap = new Map<
-    string,
-    ToolInterface<unknown, unknown, UI_MESSAGE>
-  >();
+  private readonly listeners = new Set<(event: AgentEvent<UI_MESSAGE>) => void>();
+  private readonly toolMap = new Map<string, ToolInterface<unknown, unknown, UI_MESSAGE>>();
   private readonly chat: RuntimeChat<UI_MESSAGE>;
   private readonly initialSessionTitle: string;
   private pendingSessionId?: string;
@@ -71,9 +57,7 @@ export class Agent<UI_MESSAGE extends UIMessage = UIMessage> {
   readonly sessions = {
     create: async (input: AgentSessionCreateInput = {}) => {
       this.ensureNotDestroyed();
-      const session = this.toAgentSession(
-        await this.storage.createSession(input),
-      );
+      const session = this.toAgentSession(await this.storage.createSession(input));
       this.emit({ type: "session-created", session });
       return session;
     },
@@ -115,9 +99,7 @@ export class Agent<UI_MESSAGE extends UIMessage = UIMessage> {
     },
     update: async (id: string, patch: AgentSessionUpdateInput) => {
       this.ensureNotDestroyed();
-      const session = this.toAgentSession(
-        await this.storage.updateSession(id, patch),
-      );
+      const session = this.toAgentSession(await this.storage.updateSession(id, patch));
       if (this._state.session?.id === id) {
         this._state.session = session;
         this.emitStateChanged();
@@ -409,9 +391,7 @@ export class Agent<UI_MESSAGE extends UIMessage = UIMessage> {
     this.persistChain = this.persistChain
       .then(async () => {
         await this.storage.saveMessages(sessionId, messages);
-        const nextSession = this.toAgentSession(
-          await this.storage.updateSession(sessionId, {}),
-        );
+        const nextSession = this.toAgentSession(await this.storage.updateSession(sessionId, {}));
         if (this._state.session?.id === sessionId) {
           this._state.session = nextSession;
         }

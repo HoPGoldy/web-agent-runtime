@@ -5,7 +5,7 @@ import {
   createAssistantTextMessage,
   createAssistantToolCallMessage,
   createSequenceLlmProvider,
-  createStaticToolProvider,
+  createStaticTools,
 } from "./runtime-test-helpers";
 
 describe("agent runtime errors", () => {
@@ -16,13 +16,11 @@ describe("agent runtime errors", () => {
       storage: new IndexedDbAgentStorage({
         dbName: `runtime-errors-continue-${crypto.randomUUID()}`,
       }),
-      toolProvider: createStaticToolProvider([]),
+      tools: createStaticTools([]),
       systemPrompt: "System prompt",
     });
 
-    await expect(runtime.continue()).rejects.toThrow(
-      "Cannot continue without an active session",
-    );
+    await expect(runtime.continue()).rejects.toThrow("Cannot continue without an active session");
   });
 
   it("surfaces codec failures without overwriting stored session data", async () => {
@@ -30,11 +28,7 @@ describe("agent runtime errors", () => {
       dbName: `runtime-errors-codec-${crypto.randomUUID()}`,
     });
     const session = await storage.createSession({ id: "session-1" });
-    await storage.saveSessionData(
-      session.id,
-      { invalid: true },
-      { expectedRevision: session.revision },
-    );
+    await storage.saveSessionData(session.id, { invalid: true }, { expectedRevision: session.revision });
     const runtime = await createAgentRuntime({
       model: { provider: "proxy", id: "claude-test" },
       llmProvider: createSequenceLlmProvider([createAssistantTextMessage("unused")]),
@@ -47,7 +41,7 @@ describe("agent runtime errors", () => {
           throw new Error("bad codec");
         },
       },
-      toolProvider: createStaticToolProvider([]),
+      tools: createStaticTools([]),
       systemPrompt: "System prompt",
     });
 
@@ -69,7 +63,7 @@ describe("agent runtime errors", () => {
         createAssistantTextMessage("answer two"),
       ]),
       storage,
-      toolProvider: createStaticToolProvider([]),
+      tools: createStaticTools([]),
       systemPrompt: "System prompt",
     });
 
@@ -103,7 +97,7 @@ describe("agent runtime errors", () => {
       storage: new IndexedDbAgentStorage({
         dbName: `runtime-errors-abort-${crypto.randomUUID()}`,
       }),
-      toolProvider: createStaticToolProvider([
+      tools: createStaticTools([
         {
           name: "read",
           description: "read",

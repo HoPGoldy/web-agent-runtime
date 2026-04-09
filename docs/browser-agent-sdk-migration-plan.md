@@ -2,7 +2,7 @@
 
 ## 目标
 
-将当前以 `Agent + RuntimeChat + UIMessage` 为中心的浏览器实现，迁移到以 `AgentRuntime + provider contracts + runtime session graph` 为中心的 SDK 结构，同时保留旧 API 作为过渡适配层。
+将当前以 `Agent + RuntimeChat + UIMessage` 为中心的浏览器实现，迁移到以 `AgentRuntime + LLM/storage contracts + runtime session graph` 为中心的 SDK 结构，同时保留旧 API 作为过渡适配层。
 
 ## 当前状态
 
@@ -57,7 +57,7 @@
 - 使用 `createAgentRuntime`
 - 使用 `createAiSdkLlmProvider`
 - 使用 `IndexedDbAgentStorage` + `createJsonSessionDataCodec`
-- 通过 `toolProvider` 和 `getHostContext` 注入宿主能力
+- 通过 `tools[]` 和 `getHostContext` 注入宿主能力
 
 ### 2. 老宿主维持 `Agent`，不立即重写
 
@@ -67,16 +67,16 @@
 - 不再给旧接口增加新的 session/fork/compaction 需求
 - 新需求优先在 `AgentRuntime` 路径实现
 
-### 3. 宿主层逐步转向 provider 风格
+### 3. 宿主层逐步转向清晰边界
 
-从“传一组工具实例”迁移到：
+从“直接拼接 transport 和消息快照”迁移到：
 
 - `llmProvider`
 - `storage`
-- `toolProvider`
+- `tools`
 - 可选的 `promptComposer`
 
-这样宿主边界更清晰，也更接近 pi coding-agent 的分层方式。
+这样宿主边界更清晰，也更接近 pi mono 目前对外的 `tools[]` 习惯用法。
 
 ## 删除与冻结策略
 
@@ -122,7 +122,7 @@
 Office.js 首版建议：
 
 - 由 host context 暴露 `Office` 对象和文档选择态
-- 工具通过 `toolProvider` 按 runtime state 动态注册
+- 工具先直接通过 `tools[]` 传入，复杂场景再评估是否需要回引入 registry 层
 - 前端只持有 session id 和 runtime state，不直接拼接 LLM payload
 - 后端代理统一负责模型协议转换
 

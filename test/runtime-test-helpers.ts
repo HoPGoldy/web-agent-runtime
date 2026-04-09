@@ -1,8 +1,4 @@
-import type {
-  ToolDefinition,
-  ToolProvider,
-  ToolProviderContext,
-} from "../src/providers";
+import type { ToolDefinition } from "../src/providers";
 import type { AssistantMessage, ToolCallBlock, UserMessage } from "../src/session/session-types";
 import { createResultStream } from "../src/llm/llm-provider-interface";
 import type { LlmProvider } from "../src/llm/llm-provider-interface";
@@ -15,10 +11,7 @@ export function createUserMessage(text: string, timestamp = Date.now()): UserMes
   };
 }
 
-export function createAssistantTextMessage(
-  text: string,
-  timestamp = Date.now(),
-): AssistantMessage {
+export function createAssistantTextMessage(text: string, timestamp = Date.now()): AssistantMessage {
   return {
     role: "assistant",
     content: [{ type: "text", text }],
@@ -65,14 +58,8 @@ export function createSequenceLlmProvider(
   };
 }
 
-export function createStaticToolProvider<THostContext = unknown>(
+export function createStaticTools<THostContext = unknown>(
   tools: Array<ToolDefinition<unknown, unknown, unknown, THostContext>>,
-): ToolProvider<unknown, unknown, THostContext> {
-  return {
-    async getTools(
-      _context: ToolProviderContext<unknown, THostContext>,
-    ) {
-      return tools;
-    },
-  };
+): Array<ToolDefinition<unknown, unknown, unknown, THostContext>> {
+  return tools;
 }

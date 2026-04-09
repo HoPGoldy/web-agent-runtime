@@ -6,7 +6,7 @@
 
 ## 概述
 
-本需求文档定义 `web-agent-runtime` 演进为浏览器优先 Agent SDK 的功能与非功能要求。目标是得到一套可嵌入浏览器应用的 runtime API，并通过 provider 机制接入模型调用、session 存储和宿主工具系统。
+本需求文档定义 `web-agent-runtime` 演进为浏览器优先 Agent SDK 的功能与非功能要求。目标是得到一套可嵌入浏览器应用的 runtime API，并通过 provider 机制接入模型调用、session 存储，以及通过 `tools[]` 接入宿主工具系统。
 
 当设计语义出现不确定时，应以 `pi-mono/packages/agent` 和 `pi-mono/packages/coding-agent` 的既有行为作为参考基线。
 
@@ -14,7 +14,7 @@
 
 ### 通用需求
 
-- **FR-001**: 系统应暴露一套浏览器优先的 runtime API，可通过 `model`、`llmProvider`、`storage` 和 `toolProvider` 创建。
+- **FR-001**: 系统应暴露一套浏览器优先的 runtime API，可通过 `model`、`llmProvider`、`storage` 和 `tools` 创建。
 - **FR-002**: 系统应定义自己的 `AgentMessage`、`AssistantStreamEvent` 和 runtime state model，不再要求 `UIMessage` 作为唯一内部消息表示。
 - **FR-003**: 系统应维护一套强类型的 runtime 内部 session graph，用于表示消息条目、模型变更、thinking level 变更、compaction 条目和宿主专用数据。
 - **FR-004**: 系统应将 storage 视为只负责持久化 session metadata 和 opaque session document 的 provider，而不是持久化强类型 runtime entries 的组件。
@@ -24,7 +24,7 @@
 
 - **FR-010**: 当 runtime 被创建时，系统应初始化状态、工具注册解析以及 storage/session 集成，且不依赖特定 UI 框架。
 - **FR-011**: 当调用方提交 `prompt()` 时，系统应追加新的用户消息、流式输出 assistant events、更新 runtime 状态并持久化 session data。
-- **FR-012**: 当 assistant 发出 tool call 时，系统应通过配置的 `ToolProvider` 解析工具，并按配置的执行模式执行。
+- **FR-012**: 当 assistant 发出 tool call 时，系统应从配置的 `tools` 集合中解析工具，并按配置的执行模式执行。
 - **FR-013**: 当 agent 运行中调用方提交 `steer()` 时，系统应将该消息入队，并在当前 assistant turn 完成 tool execution 之后、下一次模型调用之前投递。
 - **FR-014**: 当 agent 运行中调用方提交 `followUp()` 时，系统应将该消息入队，并仅在 agent 原本将要停止时投递。
 - **FR-015**: 当调用方请求 `compact()` 时，系统应使用当前主模型总结较早上下文，将 compaction 结果写入 runtime session graph，并从 storage 重建 active context。
@@ -96,7 +96,7 @@
 
 ### 核心功能
 
-- [ ] **AC-001**: 给定一个通过 `llmProvider`、`storage` 和 `toolProvider` 创建的 runtime，当调用 `prompt()` 时，runtime 应发出 start/update/end 事件，并通过 storage 持久化更新后的 session data。
+- [ ] **AC-001**: 给定一个通过 `llmProvider`、`storage` 和 `tools` 创建的 runtime，当调用 `prompt()` 时，runtime 应发出 start/update/end 事件，并通过 storage 持久化更新后的 session data。
 - [ ] **AC-002**: 给定一个正在运行的 agent，当调用 `steer()` 时，steering message 应在下一次模型 turn 前、且在当前 turn 完成 tool execution 后被投递。
 - [ ] **AC-003**: 给定一个正在运行的 agent，当调用 `followUp()` 时，follow-up message 应仅在 agent 原本将要停止时被投递。
 - [ ] **AC-004**: 给定一个已持久化 session data 的 session，当 runtime 重新加载它时，应能基于 codec 解码后的 session graph 以确定性方式重建 active context。

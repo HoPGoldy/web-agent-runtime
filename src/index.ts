@@ -26,7 +26,7 @@ export { createReadTool } from "./tools/create-read-tool";
 export { createWriteTool } from "./tools/create-write-tool";
 export { createEditTool } from "./tools/create-edit-tool";
 export { createRunJsTool } from "./tools/create-run-js-tool";
-export { createAgentRuntime } from "./runtime";
+export { createAgentRuntime, LogLevel } from "./runtime";
 export type {
   AfterToolCallContext,
   AfterToolCallResult,
@@ -39,6 +39,8 @@ export type {
   ConvertToLlm,
   ForkSessionInput,
   ForkSessionResult,
+  LoggerCallback,
+  LoggerOptions,
   PromptInput,
   RuntimeEvent,
   RuntimeState,
@@ -94,8 +96,6 @@ export type {
   ToolDefinition,
   ToolExecutionMode,
   ToolExecutionResult,
-  ToolProvider,
-  ToolProviderContext,
 } from "./providers";
 export * as runtimeContracts from "./runtime";
 export * as sessionContracts from "./session";

@@ -1,9 +1,4 @@
-import type {
-  LlmProvider,
-  ToolDefinition,
-  ToolExecutionMode,
-  ToolExecutionResult,
-} from "../providers";
+import type { LlmProvider, ToolDefinition, ToolExecutionMode, ToolExecutionResult } from "../providers";
 import type {
   AfterToolCallResult,
   BeforeToolCallResult,
@@ -20,6 +15,21 @@ import type {
   ToolResultMessage,
   UserMessage,
 } from "../session/session-types";
+import {
+  traceRuntimeDebug,
+  traceRuntimeError,
+  traceRuntimeInfo,
+  traceRuntimeWarning,
+  type RuntimeLogger,
+} from "./debug";
+
+const MAX_TURNS_PER_RUN = 12;
+
+function yieldToBrowser() {
+  return new Promise<void>((resolve) => {
+    setTimeout(resolve, 0);
+  });
+}
 
 function createUserMessage(text: string): UserMessage {
   return {
@@ -64,12 +74,11 @@ function normalizeToolResultContent(content: unknown[]): ToolResultContentBlock[
 }
 
 function getToolCalls(message: AssistantMessage): ToolCallBlock[] {
-  return message.content.filter(
-    (block): block is ToolCallBlock => block.type === "toolCall",
-  );
+  return message.content.filter((block): block is ToolCallBlock => block.type === "toolCall");
 }
 
 export interface AgentLoopBindings<THostContext = unknown> {
+  logger?: RuntimeLogger;
   llmProvider: LlmProvider<unknown>;
   toolExecutionMode: ToolExecutionMode;
   getState(): RuntimeState;
@@ -85,9 +94,7 @@ export interface AgentLoopBindings<THostContext = unknown> {
     systemPrompt: string;
     messages: unknown[];
   }>;
-  getTools(): Promise<
-    Array<ToolDefinition<unknown, unknown, AgentMessage, THostContext>>
-  >;
+  getTools(): Promise<Array<ToolDefinition<unknown, unknown, AgentMessage, THostContext>>>;
   getHostContext(): Promise<THostContext>;
   consumeSteeringMessages(): AgentMessage[];
   consumeFollowUpMessages(): AgentMessage[];
@@ -133,34 +140,63 @@ export class AgentLoopEngine<THostContext = unknown> {
     this.bindings.setStatus("streaming");
     this.bindings.emit({ type: "agent_start" });
     let pendingMessages = normalizePromptInput(input);
+    let turnCount = 0;
+    traceRuntimeInfo(this.bindings.logger, "loop:run:start", {
+      pendingMessageCount: pendingMessages.length,
+    });
 
     try {
       while (true) {
+        if (turnCount >= MAX_TURNS_PER_RUN) {
+          throw new Error(
+            `Agent loop exceeded ${MAX_TURNS_PER_RUN} turns. Possible repeated tool-call cycle.`,
+          );
+        }
+
+        turnCount += 1;
+        traceRuntimeDebug(this.bindings.logger, "loop:turn:start", {
+          turnCount,
+          pendingMessageCount: pendingMessages.length,
+        });
+
         if (pendingMessages.length > 0) {
+          traceRuntimeDebug(this.bindings.logger, "loop:pending-messages:append:start", {
+            turnCount,
+            pendingMessageCount: pendingMessages.length,
+          });
           await this.bindings.appendMessages(pendingMessages);
+          traceRuntimeDebug(this.bindings.logger, "loop:pending-messages:append:done", {
+            turnCount,
+          });
         }
 
         const turnResult = await this.runTurn(this.abortController.signal);
         const steeringMessages = this.bindings.consumeSteeringMessages();
         if (steeringMessages.length > 0) {
           pendingMessages = steeringMessages;
+          await yieldToBrowser();
           continue;
         }
 
         if (turnResult.toolResults.length > 0) {
           pendingMessages = [];
+          await yieldToBrowser();
           continue;
         }
 
         const followUpMessages = this.bindings.consumeFollowUpMessages();
         if (followUpMessages.length > 0) {
           pendingMessages = followUpMessages;
+          await yieldToBrowser();
           continue;
         }
 
         break;
       }
 
+      traceRuntimeInfo(this.bindings.logger, "loop:run:done", {
+        messageCount: this.bindings.getMessages().length,
+      });
       this.bindings.setStatus("ready");
       this.bindings.emit({
         type: "agent_end",
@@ -168,18 +204,32 @@ export class AgentLoopEngine<THostContext = unknown> {
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
+      traceRuntimeError(this.bindings.logger, "loop:run:error", {
+        message,
+      });
       this.bindings.setStatus("error", message);
       throw error;
     } finally {
       this.bindings.setStreamMessage(null);
       this.running = false;
+      traceRuntimeDebug(this.bindings.logger, "loop:run:finally");
     }
   }
 
   private async runTurn(signal: AbortSignal) {
+    traceRuntimeDebug(this.bindings.logger, "loop:runTurn:get-tools:start");
     const tools = await this.bindings.getTools();
+    traceRuntimeDebug(this.bindings.logger, "loop:runTurn:get-tools:done", {
+      toolCount: tools.length,
+    });
+    traceRuntimeDebug(this.bindings.logger, "loop:runTurn:build-context:start");
     const context = await this.bindings.buildLlmContext(tools, signal);
+    traceRuntimeDebug(this.bindings.logger, "loop:runTurn:build-context:done", {
+      toolCount: tools.length,
+      messageCount: context.messages.length,
+    });
     this.bindings.emit({ type: "turn_start" });
+    traceRuntimeDebug(this.bindings.logger, "loop:runTurn:llm-provider:start");
     const stream = await this.bindings.llmProvider.stream({
       model: this.bindings.getState().model,
       reasoning: this.bindings.getState().thinkingLevel,
@@ -195,7 +245,13 @@ export class AgentLoopEngine<THostContext = unknown> {
       },
       signal,
     });
+    traceRuntimeDebug(this.bindings.logger, "loop:runTurn:llm-provider:done");
+    traceRuntimeDebug(this.bindings.logger, "loop:runTurn:stream-result:start");
     let assistantMessage = (await stream.result()) as AssistantMessage;
+    traceRuntimeDebug(this.bindings.logger, "loop:runTurn:stream-result:done", {
+      stopReason: assistantMessage.stopReason,
+      contentBlocks: assistantMessage.content.length,
+    });
 
     for await (const event of stream) {
       if (event.type === "start") {
@@ -216,19 +272,22 @@ export class AgentLoopEngine<THostContext = unknown> {
 
       this.bindings.emit({
         type: "message_update",
-        message: (
-          ("partial" in event ? event.partial : undefined) ??
+        message: (("partial" in event ? event.partial : undefined) ??
           ("message" in event ? event.message : undefined) ??
-          ("error" in event ? event.error : assistantMessage)
-        ) as AgentMessage,
+          ("error" in event ? event.error : assistantMessage)) as AgentMessage,
         assistantEvent: event,
       });
     }
 
     this.bindings.setStreamMessage(null);
+    traceRuntimeDebug(this.bindings.logger, "loop:runTurn:append-assistant:start");
     await this.bindings.appendMessages([assistantMessage]);
+    traceRuntimeDebug(this.bindings.logger, "loop:runTurn:append-assistant:done");
     this.bindings.emit({ type: "message_end", message: assistantMessage });
     const toolResults = await this.executeToolCalls(assistantMessage, tools, signal);
+    traceRuntimeDebug(this.bindings.logger, "loop:runTurn:tool-calls:done", {
+      toolResultCount: toolResults.length,
+    });
     this.bindings.emit({
       type: "turn_end",
       message: assistantMessage,
@@ -251,8 +310,8 @@ export class AgentLoopEngine<THostContext = unknown> {
       return [] as ToolResultMessage[];
     }
 
-    const executions = toolCalls.map((toolCall) => () =>
-      this.executeSingleToolCall(assistantMessage, toolCall, tools, signal),
+    const executions = toolCalls.map(
+      (toolCall) => () => this.executeSingleToolCall(assistantMessage, toolCall, tools, signal),
     );
 
     if (this.bindings.toolExecutionMode === "parallel") {
@@ -275,6 +334,9 @@ export class AgentLoopEngine<THostContext = unknown> {
   ) {
     const tool = tools.find((candidate) => candidate.name === toolCall.name);
     if (!tool) {
+      traceRuntimeWarning(this.bindings.logger, "loop:tool-call:missing-tool", {
+        toolName: toolCall.name,
+      });
       const missingToolMessage: ToolResultMessage = {
         role: "toolResult",
         toolCallId: toolCall.id,
@@ -301,6 +363,10 @@ export class AgentLoopEngine<THostContext = unknown> {
 
     const stateBeforeCall = this.bindings.getState();
     const hostContext = await this.bindings.getHostContext();
+    traceRuntimeDebug(this.bindings.logger, "loop:tool-call:start", {
+      toolName: tool.name,
+      toolCallId: toolCall.id,
+    });
     this.bindings.emit({
       type: "tool_execution_start",
       toolCallId: toolCall.id,
@@ -341,6 +407,10 @@ export class AgentLoopEngine<THostContext = unknown> {
     }
 
     try {
+      traceRuntimeDebug(this.bindings.logger, "loop:tool-call:execute:start", {
+        toolName: tool.name,
+        toolCallId: toolCall.id,
+      });
       const executionResult = await tool.execute({
         toolCallId: toolCall.id,
         input: toolCall.arguments,
@@ -359,6 +429,10 @@ export class AgentLoopEngine<THostContext = unknown> {
             partialResult: partial,
           });
         },
+      });
+      traceRuntimeDebug(this.bindings.logger, "loop:tool-call:execute:done", {
+        toolName: tool.name,
+        toolCallId: toolCall.id,
       });
       const afterResult = await this.bindings.afterToolCall?.({
         assistantMessage,
@@ -393,6 +467,11 @@ export class AgentLoopEngine<THostContext = unknown> {
       return toolResultMessage;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
+      traceRuntimeError(this.bindings.logger, "loop:tool-call:execute:error", {
+        toolName: tool.name,
+        toolCallId: toolCall.id,
+        message: errorMessage,
+      });
       const toolResultMessage: ToolResultMessage = {
         role: "toolResult",
         toolCallId: toolCall.id,

@@ -20,7 +20,7 @@
 
 - LLM provider
 - storage provider
-- tool provider
+- tools 列表
 
 这个 SDK 的首个直接应用场景是 Office 插件环境，但设计不应绑定 Office.js 本身，而应保持宿主无关。
 
@@ -45,7 +45,7 @@
 ### 范围内
 
 - 统一的浏览器 Agent SDK 核心接口
-- 统一的 LLM provider、storage provider、tool provider 边界
+- 统一的 LLM provider、storage provider 边界，以及直接传入的 tools 列表
 - runtime 内部 session graph、session codec 与 opaque storage document 方案
 - session fork、manual compaction、steering、follow-up 的语义落地
 - 与现有包兼容的公开导出收敛方案
@@ -64,7 +64,7 @@
 
 1. **Core 层**：负责 agent loop、消息模型、tool 生命周期、steering 和 follow-up 语义。
 2. **Runtime Session 层**：负责 session open/create/fork/delete、context rebuild、compaction、tool 装配和 system prompt 解析。
-3. **Provider 层**：对外暴露 `LlmProvider`、`StorageProvider`、`ToolProvider`，并允许可选的 `PromptComposer` 与 `SessionDataCodec`。
+3. **Provider 层**：对外暴露 `LlmProvider`、`StorageProvider`，并允许通过 `tools[]`、`PromptComposer` 与 `SessionDataCodec` 组合宿主能力。
 
 Storage provider 不直接理解 `AgentMessage` 或 `SessionEntry` 语义，而只保存 opaque session document。runtime 内部再通过 codec 把该 document 解释成强类型 session graph。
 

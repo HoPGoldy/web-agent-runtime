@@ -106,18 +106,6 @@ export interface ToolDefinition<
   }): Promise<ToolExecutionResult<TDetails>>;
 }
 
-export interface ToolProviderContext<TState = unknown, THostContext = unknown> {
-  session: SessionRecord | null;
-  state: TState;
-  hostContext: THostContext;
-}
-
-export interface ToolProvider<TState = unknown, TMessage = unknown, THostContext = unknown> {
-  getTools(
-    context: ToolProviderContext<TState, THostContext>,
-  ): Promise<Array<ToolDefinition<unknown, unknown, TMessage, THostContext>>>;
-}
-
 export interface PromptComposerContext<TState = unknown, TMessage = unknown, THostContext = unknown> {
   session: SessionRecord | null;
   state: TState;

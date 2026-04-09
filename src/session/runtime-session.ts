@@ -7,12 +7,9 @@ import type {
   UpdateSessionInput,
 } from "./contracts";
 import { createJsonSessionDataCodec } from "./session-data-codec";
-import {
-  createRuntimeSessionData,
-  extractBranchSessionData,
-  type RuntimeSessionData,
-} from "./session-types";
+import { createRuntimeSessionData, extractBranchSessionData, type RuntimeSessionData } from "./session-types";
 import type { ForkSessionInput, ForkSessionResult } from "../runtime/contracts";
+import { traceRuntimeDebug, type RuntimeLogger } from "../runtime/debug";
 
 export interface LoadedRuntimeSession {
   session: SessionRecord;
@@ -29,17 +26,21 @@ export class RuntimeSessionStore<TSessionData = RuntimeSessionData> {
   constructor(
     private readonly storage: StorageProvider<TSessionData>,
     codec?: SessionDataCodec<TSessionData, RuntimeSessionData>,
+    private readonly logger?: RuntimeLogger,
   ) {
     this.codec =
-      codec ??
-      (createJsonSessionDataCodec() as SessionDataCodec<
-        TSessionData,
-        RuntimeSessionData
-      >);
+      codec ?? (createJsonSessionDataCodec() as SessionDataCodec<TSessionData, RuntimeSessionData>);
   }
 
   async create(input: CreateSessionInput = {}): Promise<LoadedRuntimeSession> {
+    traceRuntimeDebug(this.logger, "session-store:create:start", {
+      title: input.title ?? null,
+    });
     const session = await this.storage.createSession(input);
+    traceRuntimeDebug(this.logger, "session-store:create:storage-done", {
+      sessionId: session.id,
+      revision: session.revision,
+    });
     return {
       session,
       data: createRuntimeSessionData(input.metadata),
@@ -70,11 +71,7 @@ export class RuntimeSessionStore<TSessionData = RuntimeSessionData> {
     return this.storage.listSessions();
   }
 
-  async update(
-    sessionId: string,
-    patch: UpdateSessionInput,
-    expectedRevision?: string,
-  ) {
+  async update(sessionId: string, patch: UpdateSessionInput, expectedRevision?: string) {
     return this.storage.updateSession(sessionId, patch, { expectedRevision });
   }
 
@@ -82,11 +79,7 @@ export class RuntimeSessionStore<TSessionData = RuntimeSessionData> {
     await this.storage.deleteSession(sessionId);
   }
 
-  async save(
-    sessionId: string,
-    data: RuntimeSessionData,
-    expectedRevision?: string,
-  ): Promise<CommitResult> {
+  async save(sessionId: string, data: RuntimeSessionData, expectedRevision?: string): Promise<CommitResult> {
     const payload = await this.codec.serialize(data);
     return this.storage.saveSessionData(sessionId, payload, {
       expectedRevision,

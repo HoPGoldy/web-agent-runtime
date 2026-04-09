@@ -1,9 +1,10 @@
+import type { UIMessage } from "ai";
 import { describe, expect, it } from "vitest";
-import { createRuntimeSessionData } from "../src/session/session-types";
+import { createRuntimeSessionData, type RuntimeSessionData } from "../src/session/session-types";
 import { IndexedDbAgentStorage } from "../src/storage/indexed-db-agent-storage";
 
 function createStorage() {
-  return new IndexedDbAgentStorage({
+  return new IndexedDbAgentStorage<UIMessage, RuntimeSessionData>({
     dbName: `storage-contract-${crypto.randomUUID()}`,
   });
 }
@@ -46,11 +47,7 @@ describe("storage provider contract", () => {
     ).rejects.toThrow("Revision conflict for session: session-2");
 
     await expect(
-      storage.updateSession(
-        session.id,
-        { title: "stale" },
-        { expectedRevision: session.revision },
-      ),
+      storage.updateSession(session.id, { title: "stale" }, { expectedRevision: session.revision }),
     ).rejects.toThrow("Revision conflict for session: session-2");
 
     expect(firstCommit.session.revision).not.toBe(session.revision);

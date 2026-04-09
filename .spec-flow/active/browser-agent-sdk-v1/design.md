@@ -11,7 +11,7 @@
 - 让 runtime 内部保留一套强类型 session graph 和 agent 行为模型
 - 让 storage provider 只负责 session metadata 和 opaque session document 的读写
 - 让 LLM provider 统一输出标准化的 assistant stream event
-- 让 tool provider 只关心工具解析与执行，不绑 UI、不绑 Office、不绑具体 transport
+- 让 tools 列表只描述工具定义与执行，不绑 UI、不绑 Office、不绑具体 transport
 
 在行为未明确的地方，对齐 pi 的语义，尤其是：
 
@@ -31,7 +31,7 @@ graph TD
     SessionLayer --> Storage[StorageProvider]
 
     Loop --> LLM[LlmProvider]
-    Loop --> Tools[ToolProvider]
+    Loop --> Tools[ToolDefinitions[]]
 
     SessionLayer --> Prompt[PromptComposer 可选]
 
@@ -56,7 +56,7 @@ graph TD
 - `RuntimeSession`
 - `AgentLoopEngine`
 - `LlmProvider`
-- `ToolProvider`
+- `ToolDefinition[]`
 
 **接口**:
 
@@ -116,7 +116,7 @@ interface RuntimeSession<TSessionData = RuntimeSessionData> {
 **依赖**:
 
 - `LlmProvider`
-- `ToolProvider`
+- `ToolDefinition[]`
 - `ConvertToLlm`
 - `TransformContext`
 
@@ -156,7 +156,7 @@ interface SessionDataCodec<TSessionData = unknown> {
 
 - `LlmProvider` 负责 assistant stream normalization
 - `StorageProvider` 负责 session metadata + opaque document 读写
-- `ToolProvider` 负责工具解析与执行
+- `tools[]` 负责提供工具定义与执行逻辑
 
 ## API 设计
 
@@ -175,7 +175,7 @@ async function createAgentRuntime<THostContext = unknown, TSessionData = Runtime
 - `model`
 - `llmProvider`
 - `storage`
-- `toolProvider`
+- `tools`
 - `sessionDataCodec` 可选
 - `promptComposer` 可选
 - `beforeToolCall` / `afterToolCall` 可选
@@ -281,7 +281,7 @@ sequenceDiagram
     participant R as AgentRuntime
     participant S as RuntimeSession
     participant L as LlmProvider
-    participant T as ToolProvider
+    participant T as Tools[]
     participant P as StorageProvider
 
     H->>R: prompt("...")
