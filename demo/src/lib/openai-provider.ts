@@ -1,12 +1,10 @@
 import {
-  LogLevel,
   createResultStream,
   type AgentMessage,
   type AssistantMessage,
   type AssistantStreamEvent,
   type LlmProvider,
   type LlmStreamRequest,
-  type LoggerOptions,
   type ThinkingLevel,
   type ToolCallBlock,
   type ToolResultContentBlock,
@@ -17,7 +15,6 @@ export interface OpenAiProviderOptions {
   baseUrl?: string;
   project?: string;
   organization?: string;
-  loggerOptions?: LoggerOptions;
 }
 
 type OpenAiToolCall = {
@@ -63,66 +60,33 @@ let didWarnAboutBrowserKey = false;
 
 export function createOpenAiLlmProvider(options: OpenAiProviderOptions): LlmProvider<AssistantMessage> {
   if (!didWarnAboutBrowserKey) {
-    const message =
-      "VITE_OPENAI_API_KEY is being sent from the browser to an OpenAI-compatible endpoint. This is only acceptable for a local demo. In production, move the API key to a backend proxy.";
-    if (options.loggerOptions?.loggerCallback) {
-      emitLoggerMessage(options.loggerOptions, LogLevel.Warning, message);
-    } else {
-      console.warn("[web-agent demo]", message);
-    }
+    console.warn(
+      "[web-agent demo] VITE_OPENAI_API_KEY is being sent from the browser to an OpenAI-compatible endpoint. This is only acceptable for a local demo. In production, move the API key to a backend proxy.",
+    );
     didWarnAboutBrowserKey = true;
   }
 
   return {
     async stream(request) {
-      emitLoggerMessage(options.loggerOptions, LogLevel.Verbose, "llm:stream:start", {
-        model: request.model.id,
-        messageCount: request.context.messages.length,
-        toolCount: request.context.tools?.length ?? 0,
-      });
       const requestUrl = resolveChatCompletionsUrl(options.baseUrl);
-      emitLoggerMessage(options.loggerOptions, LogLevel.Verbose, "llm:stream:url-resolved", {
-        requestUrl,
-      });
-      emitLoggerMessage(options.loggerOptions, LogLevel.Verbose, "llm:stream:build-body:start");
       const requestBody = JSON.stringify(buildRequestBody(request));
-      emitLoggerMessage(options.loggerOptions, LogLevel.Verbose, "llm:stream:build-body:done", {
-        bodyLength: requestBody.length,
-      });
-      emitLoggerMessage(options.loggerOptions, LogLevel.Verbose, "llm:stream:fetch:start");
       const response = await fetch(requestUrl, {
         method: "POST",
         headers: buildHeaders(options.apiKey, options.organization, options.project),
         body: requestBody,
         signal: request.signal,
       });
-      emitLoggerMessage(options.loggerOptions, LogLevel.Verbose, "llm:stream:fetch:response", {
-        ok: response.ok,
-        status: response.status,
-      });
 
       if (!response.ok) {
         const bodyText = await response.text();
-        emitLoggerMessage(options.loggerOptions, LogLevel.Error, "llm:stream:fetch:error-body", {
-          bodyText,
-        });
         throw new Error(
           `OpenAI request failed: ${response.status} ${response.statusText}${bodyText ? ` - ${bodyText}` : ""}`,
         );
       }
 
-      emitLoggerMessage(options.loggerOptions, LogLevel.Verbose, "llm:stream:json:start");
       const payload = (await response.json()) as OpenAiCompletionResponse;
-      emitLoggerMessage(options.loggerOptions, LogLevel.Verbose, "llm:stream:json:done", {
-        finishReason: payload.choices[0]?.finish_reason ?? null,
-        toolCallCount: payload.choices[0]?.message.tool_calls?.length ?? 0,
-      });
       const assistantMessage = toAssistantMessage(request, payload);
       const events = buildAssistantEvents(assistantMessage);
-      emitLoggerMessage(options.loggerOptions, LogLevel.Verbose, "llm:stream:done", {
-        stopReason: assistantMessage.stopReason,
-        contentBlocks: assistantMessage.content.length,
-      });
       return createResultStream(events, assistantMessage);
     },
   };
@@ -491,39 +455,4 @@ function cloneAssistantMessage(message: AssistantMessage) {
   }
 
   return JSON.parse(JSON.stringify(message)) as AssistantMessage;
-}
-
-function emitLoggerMessage(
-  loggerOptions: LoggerOptions | undefined,
-  level: LogLevel,
-  stage: string,
-  data?: unknown,
-) {
-  const loggerCallback = loggerOptions?.loggerCallback;
-  if (!loggerCallback) {
-    return;
-  }
-
-  const logLevel = loggerOptions.logLevel ?? LogLevel.Verbose;
-  if (level > logLevel) {
-    return;
-  }
-
-  try {
-    loggerCallback(level, formatLoggerMessage(stage, data));
-  } catch {
-    // Ignore demo logger failures.
-  }
-}
-
-function formatLoggerMessage(stage: string, data?: unknown) {
-  if (data === undefined) {
-    return stage;
-  }
-
-  try {
-    return `${stage} ${JSON.stringify(data)}`;
-  } catch {
-    return `${stage} ${String(data)}`;
-  }
 }

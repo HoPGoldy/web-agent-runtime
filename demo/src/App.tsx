@@ -3,9 +3,7 @@ import { startTransition, useDeferredValue, useEffect, useEffectEvent, useRef, u
 import {
   createAgentRuntime,
   IndexedDbAgentStorage,
-  LogLevel,
   type AgentRuntime,
-  type LoggerOptions,
   type RuntimeEvent,
   type RuntimeState,
   type RuntimeSessionData,
@@ -26,7 +24,6 @@ const DEFAULT_MODEL = import.meta.env.VITE_OPENAI_MODEL?.trim() || "gpt-4.1-mini
 const OPENAI_KEY = import.meta.env.VITE_OPENAI_API_KEY?.trim() || "";
 const OPENAI_BASE_URL = import.meta.env.VITE_OPENAI_BASE_URL?.trim() || "";
 const STORAGE_NAME = "web-agent-runtime-demo";
-const DEBUG_LOG_STORAGE_KEY = "web-agent-runtime-demo-debug";
 const SYSTEM_PROMPT = [
   "你是一个直接操控文本框的编辑 agent。",
   "在做破坏性编辑前，如果你不确定当前内容，请先调用 textarea_read。",
@@ -47,40 +44,6 @@ function createSessionTitle() {
   return `Textarea Lab ${formatClock(Date.now())}`;
 }
 
-function createDemoLoggerOptions(): LoggerOptions {
-  const verboseEnabled = readVerboseLoggingFlag();
-
-  return {
-    logLevel: verboseEnabled ? LogLevel.Verbose : LogLevel.Warning,
-    loggerCallback(level: LogLevel, message: string) {
-      switch (level) {
-        case LogLevel.Error:
-          console.error("[web-agent demo]", message);
-          return;
-        case LogLevel.Warning:
-          console.warn("[web-agent demo]", message);
-          return;
-        case LogLevel.Info:
-          console.info("[web-agent demo]", message);
-          return;
-        case LogLevel.Verbose:
-          console.debug("[web-agent demo]", message);
-          return;
-        default:
-          return;
-      }
-    },
-  };
-}
-
-function readVerboseLoggingFlag() {
-  try {
-    return globalThis.localStorage?.getItem(DEBUG_LOG_STORAGE_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
-
 export default function App() {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const runtimeRef = useRef<AgentRuntime | null>(null);
@@ -93,7 +56,6 @@ export default function App() {
   const [events, setEvents] = useState<EventRow[]>([]);
   const [prompt, setPrompt] = useState(DEFAULT_PROMPT);
   const [bootStatus, setBootStatus] = useState<BootStatus>(OPENAI_KEY ? "idle" : "config-missing");
-  const [loggerOptions] = useState<LoggerOptions>(() => createDemoLoggerOptions());
   const [errorMessage, setErrorMessage] = useState<string | null>(
     OPENAI_KEY
       ? null
@@ -178,13 +140,10 @@ export default function App() {
         llmProvider: createOpenAiLlmProvider({
           apiKey: OPENAI_KEY,
           baseUrl: OPENAI_BASE_URL || undefined,
-          loggerOptions,
         }),
         storage: new IndexedDbAgentStorage<UIMessage, RuntimeSessionData>({
           dbName: STORAGE_NAME,
-          loggerOptions,
         }),
-        loggerOptions,
         tools: createTextareaTools({
           read() {
             return createSnapshot(editorTextRef.current, selectionRef.current);
@@ -232,7 +191,7 @@ export default function App() {
       }
       runtimeRef.current = null;
     };
-  }, [DEFAULT_MODEL, OPENAI_BASE_URL, OPENAI_KEY, handleRuntimeEvent, loggerOptions]);
+  }, [DEFAULT_MODEL, OPENAI_BASE_URL, OPENAI_KEY, handleRuntimeEvent]);
 
   const isStreaming = runtimeState?.status === "streaming";
   const latestAssistant = findLatestAssistant(runtimeState);
@@ -243,7 +202,7 @@ export default function App() {
   const runDisabled =
     !OPENAI_KEY || isStreaming || bootStatus === "booting" || bootStatus === "session-creating";
 
-  const runRuntimeTask = async (label: string, task: () => Promise<void>) => {
+  const runRuntimeTask = async (task: () => Promise<void>) => {
     setErrorMessage(null);
     try {
       await task();
@@ -266,7 +225,7 @@ export default function App() {
       return;
     }
 
-    await runRuntimeTask("prompt", async () => {
+    await runRuntimeTask(async () => {
       await runtime.prompt(prompt.trim());
     });
   };
@@ -278,7 +237,7 @@ export default function App() {
       return;
     }
 
-    await runRuntimeTask("continue", async () => {
+    await runRuntimeTask(async () => {
       await runtime.continue();
     });
   };
@@ -290,7 +249,7 @@ export default function App() {
       return;
     }
 
-    await runRuntimeTask("compact", async () => {
+    await runRuntimeTask(async () => {
       await runtime.compact();
     });
   };
@@ -302,7 +261,7 @@ export default function App() {
       return;
     }
 
-    await runRuntimeTask("session-create", async () => {
+    await runRuntimeTask(async () => {
       await runtime.sessions.create({ title: createSessionTitle() });
     });
   };
@@ -438,10 +397,6 @@ export default function App() {
             <p className="console-note">
               当前 demo 会直接从浏览器读取 VITE_OPENAI_API_KEY，并请求 OpenAI-compatible endpoint。
               这只适用于本地验证，线上必须改成后端代理。
-            </p>
-            <p className="console-note console-note-compact">
-              把 localStorage 中的 {DEBUG_LOG_STORAGE_KEY} 设为 1 并刷新后，可在 console 查看 verbose runtime
-              日志。
             </p>
             {errorMessage ? <p className="error-banner">{errorMessage}</p> : null}
           </article>
