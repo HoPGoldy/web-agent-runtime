@@ -4,6 +4,7 @@
 
 - OpenAI-compatible LLM provider
 - textarea CRUD tools
+- localStorage chat tools
 - 运行时 event 面板
 - 模型最终输出面板
 
@@ -22,6 +23,11 @@
    `VITE_OPENAI_MODEL`
 7. 启动：
    `npm run dev`
+
+默认页面：
+
+- `http://localhost:4179/`：textarea CRUD demo
+- `http://localhost:4179/local-storage-chat.html`：极简 localStorage chat demo
 
 ## DashScope 示例
 

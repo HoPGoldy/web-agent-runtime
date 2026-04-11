@@ -147,6 +147,21 @@ await runtime.sessions.create({ title: "Portal assistant" });
 await runtime.prompt("Find the latest PTO policy and summarize it.");
 ```
 
+## Built-in Demo Tools
+
+For quick browser demos, the package also ships `createLocalStorageTools()`, which exposes `local_storage_read`, `local_storage_create`, `local_storage_update`, and `local_storage_delete`.
+
+```ts
+import { createAgentRuntime, createLocalStorageTools } from "web-agent-runtime";
+
+const runtime = await createAgentRuntime({
+  // ...other runtime options
+  tools: createLocalStorageTools({
+    keyPrefix: "demo:",
+  }),
+});
+```
+
 ## Security Model
 
 The intended production model is:
@@ -165,6 +180,7 @@ The package exposes a single runtime-first surface:
 - `createAgentRuntime`
 - `createAiSdkLlmProvider`
 - `createJsonSessionDataCodec`
+- `createLocalStorageTools` for simple browser-side localStorage CRUD demos
 - `IndexedDbAgentStorage`
 - runtime, session, and provider core types
 
@@ -181,6 +197,7 @@ Optional helpers remain available for AI SDK interop and stream testing:
 - `src/providers/`: provider contracts and prompt/tool abstractions
 - `src/llm/`: AI SDK-oriented provider adapters and result-stream helpers
 - `src/storage/`: IndexedDB persistence implementation
+- `src/tools/`: optional built-in browser demo tools
 - `demo/`: Vite + React demo for validating browser-side runtime behavior
 - `docs/`: interface draft and migration notes
 

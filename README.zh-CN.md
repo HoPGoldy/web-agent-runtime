@@ -147,6 +147,21 @@ await runtime.sessions.create({ title: "Portal assistant" });
 await runtime.prompt("Find the latest PTO policy and summarize it.");
 ```
 
+## 内置 Demo Tools
+
+为了快速做浏览器侧验证，包里也内置了 `createLocalStorageTools()`，会直接提供 `local_storage_read`、`local_storage_create`、`local_storage_update` 和 `local_storage_delete` 这四个 localStorage CRUD 工具。
+
+```ts
+import { createAgentRuntime, createLocalStorageTools } from "web-agent-runtime";
+
+const runtime = await createAgentRuntime({
+  // ...其他 runtime 选项
+  tools: createLocalStorageTools({
+    keyPrefix: "demo:",
+  }),
+});
+```
+
 ## 安全边界
 
 推荐的生产模型是：
@@ -165,6 +180,7 @@ await runtime.prompt("Find the latest PTO policy and summarize it.");
 - `createAgentRuntime`
 - `createAiSdkLlmProvider`
 - `createJsonSessionDataCodec`
+- `createLocalStorageTools`，用于简单的浏览器侧 localStorage CRUD demo
 - `IndexedDbAgentStorage`
 - runtime、session、provider 的核心类型
 
@@ -181,6 +197,7 @@ await runtime.prompt("Find the latest PTO policy and summarize it.");
 - `src/providers/`：provider 契约和 prompt/tool 抽象
 - `src/llm/`：面向 AI SDK 的 provider 适配和结果流辅助函数
 - `src/storage/`：IndexedDB 持久化实现
+- `src/tools/`：可选的内置浏览器 demo tools
 - `demo/`：用 Vite + React 写的浏览器端验证 demo
 - `docs/`：接口草案和迁移说明
 

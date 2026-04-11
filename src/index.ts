@@ -1,4 +1,5 @@
 export { IndexedDbAgentStorage } from "./storage/indexed-db-agent-storage";
+export { createLocalStorageTools, type CreateLocalStorageToolsOptions } from "./tools/local-storage-tools";
 export {
   createAiSdkLlmProvider,
   type BuildAiSdkBodyOptions,
