@@ -25,6 +25,7 @@ Its goal is to connect browser-side tools, host-exposed JavaScript APIs, and per
 ## Core Capabilities
 
 - 🌐 A pure JavaScript agent runtime for browser environments, with core agent loop, event system, and session management capabilities
+- 📦 Zero runtime dependencies in the core package
 - 💾 Built-in session CRUD, backed by IndexedDB for browser-side persistence
 - 🧭 Full context operations: prompt, continue, followUp, steer, fork, compaction, abort
 - 🧩 Fully customizable model access, storage, and tool definitions through standard interfaces

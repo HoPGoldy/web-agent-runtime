@@ -35,9 +35,6 @@
   "publishConfig": {
     "access": "public"
   },
-  "dependencies": {
-    "ai": "^6.0.59"
-  },
   "devDependencies": {
     "@types/node": "^25.5.2",
     "@vitest/coverage-v8": "^4.1.3",

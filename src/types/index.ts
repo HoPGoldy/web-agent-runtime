@@ -1,4 +1,3 @@
-export type * from "./agent";
 export type * from "./provider";
 export type * from "./runtime";
 export type * from "./runtime-compat";

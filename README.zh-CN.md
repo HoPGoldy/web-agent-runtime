@@ -25,6 +25,7 @@
 ## 核心能力
 
 - 🌐 面向浏览器开发的纯 js agent runtime：提供了 agent loop、事件系统、session 管理等核心功能
+- 📦 核心包零运行时依赖
 - 💾 内置 session 增删改查：基于 IndexedDB 的浏览器端 session 持久化
 - 🧭 完备的上下文操作：prompt、continue、followUp、steer、fork、compaction、abort
 - 🧩 完全可定制：模型调用、数据存储、工具定义均通过标准的 interface 实现。
