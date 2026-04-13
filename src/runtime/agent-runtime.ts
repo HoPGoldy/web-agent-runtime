@@ -1,21 +1,28 @@
-import { createAgentId } from "../types";
-import type { PromptComposer, ToolDefinition, ToolExecutionMode } from "../providers";
-import type { LlmProvider, ModelRef, ThinkingLevel } from "../providers";
+import { createAgentId } from "../utils/agent";
+import type {
+  LlmProvider,
+  ModelRef,
+  PromptComposer,
+  ThinkingLevel,
+  ToolDefinition,
+  ToolExecutionMode,
+} from "../types/provider";
 import {
   buildRuntimeSessionView,
   createMessageEntry,
   createRuntimeSessionData,
-  type AgentMessage,
-  type AssistantMessage,
-  type RuntimeSessionData,
-} from "../session/session-types";
+  appendSessionEntry,
+} from "../session/runtime-session-data";
 import type {
+  AgentMessage,
+  AssistantMessage,
   CreateSessionInput,
+  RuntimeSessionData,
   SessionDataCodec,
   SessionRecord,
   StorageProvider,
   UpdateSessionInput,
-} from "../session";
+} from "../types/session";
 import { RuntimeSessionStore } from "../session/runtime-session";
 import { DEFAULT_INDEXED_DB_STORAGE_NAME, IndexedDbAgentStorage } from "../storage/indexed-db-agent-storage";
 import {
@@ -32,7 +39,7 @@ import {
   type PromptInput,
   type RuntimeEvent,
   type RuntimeState,
-} from "./contracts";
+} from "../types/runtime";
 import { AgentLoopEngine } from "./agent-loop";
 import { compactRuntimeSession } from "./compaction";
 import { createRuntimeLogger, traceRuntimeDebug, traceRuntimeInfo, type RuntimeLogger } from "./debug";
@@ -523,8 +530,6 @@ function appendSessionEntryWithMessage(sessionData: RuntimeSessionData, message:
     }),
   );
 }
-
-import { appendSessionEntry } from "../session/session-types";
 
 /**
  * Creates the browser-oriented runtime implementation that powers this SDK.

@@ -5,7 +5,7 @@ export type {
   LlmStreamRequest,
   LlmToolDefinition,
   ResultStream,
-} from "../providers";
+} from "../types/provider";
 
 /**
  * Creates an in-memory result stream from a fixed event list and final value.

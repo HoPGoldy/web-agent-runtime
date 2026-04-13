@@ -1,10 +1,9 @@
-import type { SessionDataCodec } from "./contracts";
+import type { RuntimeSessionData, SessionDataCodec } from "../types/session";
 import {
   cloneRuntimeSessionData,
   isRuntimeSessionData,
   RUNTIME_SESSION_DATA_VERSION,
-  type RuntimeSessionData,
-} from "./session-types";
+} from "./runtime-session-data";
 
 /**
  * Current persisted runtime session data version understood by the default JSON codec.

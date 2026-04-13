@@ -1,5 +1,5 @@
 import type { ToolDefinition } from "../src/providers";
-import type { AssistantMessage, ToolCallBlock, UserMessage } from "../src/session/session-types";
+import type { AssistantMessage, ToolCallBlock, UserMessage } from "../src/types/session";
 import { createResultStream } from "../src/entries/provider-utils";
 import type { LlmProvider } from "../src/providers";
 

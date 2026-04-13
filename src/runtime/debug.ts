@@ -1,37 +1,7 @@
-/**
- * Verbosity levels understood by the runtime logger.
- */
-export enum LogLevel {
-  Error = 0,
-  Warning = 1,
-  Info = 2,
-  Verbose = 3,
-}
+import { LogLevel } from "./log-level";
+import type { LoggerOptions, RuntimeLogger } from "../types/runtime";
 
-/**
- * Callback used to receive serialized runtime log messages.
- */
-export type LoggerCallback = (level: LogLevel, message: string) => void;
-
-/**
- * Configuration for creating a runtime logger.
- */
-export interface LoggerOptions {
-  /** Highest verbosity that should be emitted. */
-  logLevel?: LogLevel;
-  /** Callback invoked for each emitted log message. */
-  loggerCallback?: LoggerCallback;
-}
-
-/**
- * Normalized logger instance used internally by the runtime.
- */
-export interface RuntimeLogger {
-  /** Highest enabled verbosity level. */
-  logLevel: LogLevel;
-  /** Callback that receives emitted messages. */
-  loggerCallback: LoggerCallback;
-}
+export type { LoggerCallback, LoggerOptions, RuntimeLogger } from "../types/runtime";
 
 export function createRuntimeLogger(options?: LoggerOptions): RuntimeLogger | undefined {
   if (!options?.loggerCallback) {

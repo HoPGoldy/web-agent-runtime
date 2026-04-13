@@ -1,4 +1,4 @@
-import { createAgentId } from "../types";
+import { createAgentId } from "../utils/agent";
 import type {
   CommitResult,
   CreateSessionInput,
@@ -7,37 +7,19 @@ import type {
   StoredSessionData,
   StorageProvider,
   UpdateSessionInput,
-} from "../session";
+} from "../types/session";
+import type { IndexedDbAgentStorageOptions, StoredOpaqueSessionData } from "../types/storage";
 import {
   createRuntimeLogger,
   traceRuntimeDebug,
   traceRuntimeError,
   traceRuntimeWarning,
-  type LoggerOptions,
   type RuntimeLogger,
 } from "../runtime/debug";
 
 export const DEFAULT_INDEXED_DB_STORAGE_NAME = "web-agent-runtime";
 
-/**
- * Options for creating an IndexedDB-backed storage provider.
- */
-export interface IndexedDbAgentStorageOptions {
-  /** IndexedDB database name used to store sessions and serialized session data. */
-  dbName?: string;
-  /** Database version used for schema upgrades. */
-  version?: number;
-  /** Optional runtime logger configuration for storage diagnostics. */
-  loggerOptions?: LoggerOptions;
-}
-
-/**
- * IndexedDB record shape used for serialized runtime session data.
- */
-interface StoredOpaqueSessionData<TSessionData = unknown> {
-  sessionId: string;
-  data: TSessionData;
-}
+export type { IndexedDbAgentStorageOptions } from "../types/storage";
 
 function createRevision() {
   return `${Date.now()}-${createAgentId()}`;

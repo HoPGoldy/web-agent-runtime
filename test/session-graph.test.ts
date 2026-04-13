@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ModelRef } from "../src/providers";
+import type { AssistantMessage, UserMessage } from "../src/types/session";
 import {
   appendSessionEntry,
   buildRuntimeSessionView,
@@ -10,9 +11,7 @@ import {
   createThinkingLevelChangeEntry,
   extractBranchSessionData,
   isRuntimeSessionData,
-  type AssistantMessage,
-  type UserMessage,
-} from "../src/session/session-types";
+} from "../src/session/runtime-session-data";
 
 function createUserMessage(id: string, content: string, timestamp: number): UserMessage {
   return {

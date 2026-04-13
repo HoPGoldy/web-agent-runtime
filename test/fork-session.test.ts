@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createAgentRuntime } from "../src/runtime/agent-runtime";
-import type { RuntimeSessionData } from "../src/session/session-types";
+import type { RuntimeSessionData } from "../src/types/session";
 import { IndexedDbAgentStorage } from "../src/storage/indexed-db-agent-storage";
 import {
   createAssistantTextMessage,

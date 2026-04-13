@@ -4,7 +4,7 @@ import {
   type CreateUnsafeOpenAiProviderOptions,
 } from "../src/entries/unsafe-openai";
 import type { LlmProvider } from "../src/providers";
-import type { AssistantMessage, UserMessage } from "../src/session/session-types";
+import type { AssistantMessage, UserMessage } from "../src/types/session";
 
 function createUserMessage(text: string): UserMessage {
   return {

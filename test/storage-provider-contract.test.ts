@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { createRuntimeSessionData, type RuntimeSessionData } from "../src/session/session-types";
+import type { RuntimeSessionData } from "../src/types/session";
+import { createRuntimeSessionData } from "../src/session/runtime-session-data";
 import { IndexedDbAgentStorage } from "../src/storage/indexed-db-agent-storage";
 
 function createStorage() {

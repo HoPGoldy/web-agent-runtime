@@ -1,30 +1,18 @@
 import type {
   CommitResult,
   CreateSessionInput,
+  ForkedRuntimeSession,
+  LoadedRuntimeSession,
+  RuntimeSessionData,
   SessionDataCodec,
   SessionRecord,
   StorageProvider,
   UpdateSessionInput,
-} from "./contracts";
+} from "../types/session";
 import { createJsonSessionDataCodec } from "./session-data-codec";
-import { createRuntimeSessionData, extractBranchSessionData, type RuntimeSessionData } from "./session-types";
-import type { ForkSessionInput, ForkSessionResult } from "../runtime/contracts";
+import { createRuntimeSessionData, extractBranchSessionData } from "./runtime-session-data";
+import type { ForkSessionInput } from "../types/runtime";
 import { traceRuntimeDebug, type RuntimeLogger } from "../runtime/debug";
-
-/**
- * Runtime session record paired with its hydrated session data.
- */
-export interface LoadedRuntimeSession {
-  session: SessionRecord;
-  data: RuntimeSessionData;
-}
-
-/**
- * Result of forking a runtime session, including the forked branch data.
- */
-export interface ForkedRuntimeSession extends ForkSessionResult {
-  data: RuntimeSessionData;
-}
 
 export class RuntimeSessionStore<TSessionData = RuntimeSessionData> {
   private readonly codec: SessionDataCodec<TSessionData, RuntimeSessionData>;

@@ -1,18 +1,20 @@
-import { createAgentId } from "../types";
-import type { LlmProvider, ModelRef, ThinkingLevel } from "../providers";
+import { createAgentId } from "../utils/agent";
+import type { LlmProvider, ModelRef, ThinkingLevel } from "../types/provider";
 import {
   appendSessionEntry,
   createCompactionEntry,
   createRuntimeSessionData,
   getSessionEntryLineage,
-  type AgentMessage,
-  type AssistantMessage,
-  type CompactionEntry,
-  type MessageEntry,
-  type RuntimeSessionData,
-  type SessionEntry,
-} from "../session/session-types";
-import type { CompactionOptions, CompactionResult } from "./contracts";
+} from "../session/runtime-session-data";
+import type {
+  AgentMessage,
+  AssistantMessage,
+  CompactionEntry,
+  MessageEntry,
+  RuntimeSessionData,
+  SessionEntry,
+} from "../types/session";
+import type { CompactionOptions, CompactionResult } from "../types/runtime";
 
 function extractTextFromMessage(message: AgentMessage) {
   switch (message.role) {

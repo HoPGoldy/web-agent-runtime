@@ -1,116 +1,20 @@
-import type { AssistantStreamEvent, LlmProvider, LlmStreamRequest } from "../providers";
+import type { AssistantStreamEvent, LlmProvider, LlmStreamRequest } from "../types/provider";
+import type { AgentMessage, AssistantMessage, ToolCallBlock, ToolResultContentBlock } from "../types/session";
 import type {
-  AgentMessage,
-  AssistantMessage,
-  ToolCallBlock,
-  ToolResultContentBlock,
-} from "../session/session-types";
+  CreateUnsafeOpenAiProviderOptions,
+  IteratorWaiter,
+  OpenAiCompletionChunk,
+  OpenAiCompletionResponse,
+  OpenAiMessage,
+  OpenAiToolCall,
+  OpenAiToolCallDelta,
+  OpenAiUsage,
+  StreamAccumulator,
+  ToolCallAccumulator,
+} from "../types/unsafe-openai";
 import { createResultStream } from "./llm-provider-interface";
 import { cloneSerializableValue, resolveFetchImplementation } from "../runtime/runtime-compat";
-
-export interface CreateUnsafeOpenAiProviderOptions {
-  apiKey: string;
-  baseUrl?: string;
-  project?: string;
-  organization?: string;
-  headers?:
-    | Record<string, string>
-    | Headers
-    | (() => Record<string, string> | Headers | Promise<Record<string, string> | Headers>);
-  fetch?: typeof globalThis.fetch;
-  includeUsage?: boolean;
-  buildBody?: (
-    request: LlmStreamRequest<AssistantMessage>,
-  ) => Promise<Record<string, unknown>> | Record<string, unknown>;
-}
-
-type OpenAiToolCall = {
-  id: string;
-  type: "function";
-  function: {
-    name: string;
-    arguments: string;
-  };
-};
-
-type OpenAiToolCallDelta = {
-  index?: number;
-  id?: string;
-  type?: "function";
-  function?: {
-    name?: string;
-    arguments?: string;
-  };
-};
-
-type OpenAiMessage =
-  | { role: "system"; content: string }
-  | { role: "user"; content: string }
-  | {
-      role: "assistant";
-      content: string | null;
-      tool_calls?: OpenAiToolCall[];
-    }
-  | {
-      role: "tool";
-      tool_call_id: string;
-      name?: string;
-      content: string;
-    };
-
-interface OpenAiUsage {
-  prompt_tokens?: number;
-  completion_tokens?: number;
-  total_tokens?: number;
-}
-
-interface OpenAiCompletionResponse {
-  model?: string;
-  usage?: OpenAiUsage;
-  choices: Array<{
-    finish_reason: string | null;
-    message: {
-      content?: string | null | Array<{ type?: string; text?: string }>;
-      tool_calls?: OpenAiToolCall[];
-    };
-  }>;
-}
-
-interface OpenAiCompletionChunk {
-  model?: string;
-  usage?: OpenAiUsage;
-  choices: Array<{
-    index: number;
-    finish_reason: string | null;
-    delta?: {
-      role?: string;
-      content?: string | null;
-      tool_calls?: OpenAiToolCallDelta[];
-    };
-  }>;
-}
-
-interface IteratorWaiter<TEvent> {
-  resolve: (value: IteratorResult<TEvent>) => void;
-  reject: (error: unknown) => void;
-}
-
-interface ToolCallAccumulator {
-  contentIndex: number;
-  argumentsBuffer: string;
-  nameBuffer: string;
-  started: boolean;
-}
-
-interface StreamAccumulator {
-  partial: AssistantMessage;
-  finishReason: string | null;
-  model?: string;
-  usage?: OpenAiUsage;
-  textIndex: number | null;
-  textEnded: boolean;
-  toolCalls: Map<number, ToolCallAccumulator>;
-}
+export type { CreateUnsafeOpenAiProviderOptions } from "../types/unsafe-openai";
 
 async function resolveHeaders(
   headers:

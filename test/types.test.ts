@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { createAgentId } from "../src/types";
+import { createAgentId } from "../src/utils/agent";
 
 describe("createAgentId", () => {
   it("uses crypto.randomUUID when available", () => {

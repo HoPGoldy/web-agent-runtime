@@ -1,56 +1,15 @@
-import type { ToolDefinition } from "../providers";
+import type { ToolDefinition } from "../types/provider";
+import type {
+  CreateLocalStorageToolsOptions,
+  LocalStorageDeleteInput,
+  LocalStorageEntry,
+  LocalStorageReadInput,
+  LocalStorageTool,
+  LocalStorageToolDetails,
+  LocalStorageWriteInput,
+} from "../types/tools";
 
-export interface CreateLocalStorageToolsOptions {
-  /** Storage implementation to use. Defaults to `globalThis.localStorage`. */
-  storage?: Storage;
-  /** Optional prefix applied to every key managed by these tools. */
-  keyPrefix?: string;
-}
-
-interface LocalStorageEntry {
-  key: string;
-  value: string;
-}
-
-interface LocalStorageReadInput {
-  key?: string;
-}
-
-interface LocalStorageWriteInput {
-  key: string;
-  value: string;
-}
-
-interface LocalStorageDeleteInput {
-  key: string;
-}
-
-type LocalStorageToolDetails =
-  | {
-      operation: "read";
-      keyPrefix: string;
-      totalKeys: number;
-      key?: string;
-      exists?: boolean;
-      value?: string | null;
-      entries?: LocalStorageEntry[];
-    }
-  | {
-      operation: "create" | "update";
-      key: string;
-      value: string;
-      keyPrefix: string;
-      totalKeys: number;
-    }
-  | {
-      operation: "delete";
-      key: string;
-      existed: boolean;
-      keyPrefix: string;
-      totalKeys: number;
-    };
-
-type LocalStorageTool = ToolDefinition<unknown, LocalStorageToolDetails>;
+export type { CreateLocalStorageToolsOptions } from "../types/tools";
 
 export function createLocalStorageTools(options: CreateLocalStorageToolsOptions = {}): LocalStorageTool[] {
   const keyPrefix = options.keyPrefix ?? "";

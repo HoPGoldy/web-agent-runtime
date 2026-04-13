@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
+import type { RuntimeSessionData } from "../src/types/session";
 import { createJsonSessionDataCodec, SESSION_DATA_VERSION } from "../src/session/session-data-codec";
 import {
   appendSessionEntry,
   createMessageEntry,
   createRuntimeSessionData,
-  type RuntimeSessionData,
-} from "../src/session/session-types";
+} from "../src/session/runtime-session-data";
 
 describe("session data codec", () => {
   it("round-trips runtime session data without mutating the original", async () => {

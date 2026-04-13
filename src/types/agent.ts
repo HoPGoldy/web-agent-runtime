@@ -47,12 +47,7 @@ export interface AgentSessionUpdateInput {
 /**
  * Lifecycle states reported by the high-level agent.
  */
-export type AgentStatus =
-  | "ready"
-  | "submitted"
-  | "streaming"
-  | "error"
-  | "destroyed";
+export type AgentStatus = "ready" | "submitted" | "streaming" | "error" | "destroyed";
 
 /**
  * Snapshot of the current high-level agent state.
@@ -105,14 +100,3 @@ export type AgentEvent<UI_MESSAGE extends UIMessage = UIMessage> =
       isError: boolean;
     }
   | { type: "destroyed" };
-
-/**
- * Creates a reasonably unique identifier for sessions and related runtime records.
- */
-export function createAgentId() {
-  if (typeof globalThis.crypto?.randomUUID === "function") {
-    return globalThis.crypto.randomUUID();
-  }
-
-  return `agent-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-}

@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import type { AgentRuntime } from "../src/runtime/contracts";
+import type { AgentRuntime } from "../src/types/runtime";
 import { createAgentRuntime } from "../src/runtime/agent-runtime";
 import { IndexedDbAgentStorage } from "../src/storage/indexed-db-agent-storage";
-import type { AgentMessage } from "../src/session/session-types";
+import type { AgentMessage } from "../src/types/session";
 import {
   createAssistantTextMessage,
   createAssistantToolCallMessage,

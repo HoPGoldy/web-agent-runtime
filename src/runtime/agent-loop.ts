@@ -1,12 +1,13 @@
-import type { LlmProvider, ToolDefinition, ToolExecutionMode, ToolExecutionResult } from "../providers";
+import type { LlmProvider, ToolDefinition, ToolExecutionMode, ToolExecutionResult } from "../types/provider";
 import type {
+  AgentLoopBindings,
   AfterToolCallResult,
   BeforeToolCallResult,
   CompactionResult,
   PromptInput,
   RuntimeEvent,
   RuntimeState,
-} from "./contracts";
+} from "../types/runtime";
 import type {
   AgentMessage,
   AssistantMessage,
@@ -14,7 +15,7 @@ import type {
   ToolResultContentBlock,
   ToolResultMessage,
   UserMessage,
-} from "../session/session-types";
+} from "../types/session";
 import {
   traceRuntimeDebug,
   traceRuntimeError,
@@ -75,48 +76,6 @@ function normalizeToolResultContent(content: unknown[]): ToolResultContentBlock[
 
 function getToolCalls(message: AssistantMessage): ToolCallBlock[] {
   return message.content.filter((block): block is ToolCallBlock => block.type === "toolCall");
-}
-
-/**
- * Host bindings consumed by the runtime agent loop engine.
- */
-export interface AgentLoopBindings<THostContext = unknown> {
-  logger?: RuntimeLogger;
-  llmProvider: LlmProvider<unknown>;
-  toolExecutionMode: ToolExecutionMode;
-  getState(): RuntimeState;
-  setStatus(status: RuntimeState["status"], error?: string): void;
-  setStreamMessage(message: AssistantMessage | null): void;
-  emit(event: RuntimeEvent): void;
-  appendMessages(messages: AgentMessage[]): Promise<void>;
-  getMessages(): AgentMessage[];
-  buildLlmContext(
-    tools: Array<ToolDefinition<unknown, unknown, AgentMessage, THostContext>>,
-    signal: AbortSignal,
-  ): Promise<{
-    systemPrompt: string;
-    messages: unknown[];
-  }>;
-  getTools(): Promise<Array<ToolDefinition<unknown, unknown, AgentMessage, THostContext>>>;
-  getHostContext(): Promise<THostContext>;
-  consumeSteeringMessages(): AgentMessage[];
-  consumeFollowUpMessages(): AgentMessage[];
-  beforeToolCall?(context: {
-    assistantMessage: AssistantMessage;
-    toolCall: ToolCallBlock;
-    args: unknown;
-    runtimeState: RuntimeState;
-    hostContext: THostContext;
-  }): Promise<BeforeToolCallResult | undefined>;
-  afterToolCall?(context: {
-    assistantMessage: AssistantMessage;
-    toolCall: ToolCallBlock;
-    args: unknown;
-    result: ToolExecutionResult;
-    isError: boolean;
-    runtimeState: RuntimeState;
-    hostContext: THostContext;
-  }): Promise<AfterToolCallResult | undefined>;
 }
 
 export class AgentLoopEngine<THostContext = unknown> {

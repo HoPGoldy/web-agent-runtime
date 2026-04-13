@@ -1,7 +1,4 @@
-type CompatibleGlobalScope = {
-  structuredClone?: <T>(value: T) => T;
-  fetch?: typeof globalThis.fetch;
-};
+import type { CompatibleGlobalScope } from "../types/runtime-compat";
 
 function getCompatibleGlobalScope(): CompatibleGlobalScope | undefined {
   if (typeof globalThis !== "undefined") {
