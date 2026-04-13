@@ -82,10 +82,7 @@ import { createOpenAiCompatibleLlmProvider } from "web-agent-runtime/openai-comp
 const OPENAI_API_KEY = "your-openai-api-key";
 
 const agent = await createAgentRuntime({
-  model: {
-    provider: "openai",
-    id: "gpt-4.1-mini",
-  },
+  model: { id: "gpt-4.1-mini" },
   llmProvider: createOpenAiCompatibleLlmProvider({
     apiKey: OPENAI_API_KEY,
   }),
@@ -95,6 +92,8 @@ await agent.prompt("Hello");
 ```
 
 这条路径只适合本地实验和调试，不适合生产环境。生产环境里，仍然建议用 `createAiSdkLlmProvider()` 把模型请求收敛到你自己的后端代理。
+
+现在 `model` 里只有 `id` 是必填；其他字段都会原样透传，但 runtime 不再把 `provider` 当成必填语义字段。
 
 如果你不传 `storage`，runtime 默认会使用 `IndexedDbAgentStorage`，数据库名由 `DEFAULT_INDEXED_DB_STORAGE_NAME` 常量给出，当前默认值是 `"web-agent-runtime"`。如果你需要隔离不同业务或不同 agent 实例，可以显式传入自定义 storage：
 
@@ -111,10 +110,7 @@ const OPENAI_API_KEY = "your-openai-api-key";
 console.log(DEFAULT_INDEXED_DB_STORAGE_NAME);
 
 const agent = await createAgentRuntime({
-  model: {
-    provider: "openai",
-    id: "gpt-4.1-mini",
-  },
+  model: { id: "gpt-4.1-mini" },
   llmProvider: createOpenAiCompatibleLlmProvider({
     apiKey: OPENAI_API_KEY,
   }),
@@ -131,10 +127,7 @@ import { createAgentRuntime } from "web-agent-runtime";
 import { createAiSdkLlmProvider } from "web-agent-runtime/ai-sdk";
 
 const agent = await createAgentRuntime({
-  model: {
-    provider: "company-proxy",
-    id: "claude-sonnet-4-5",
-  },
+  model: { id: "claude-sonnet-4-5" },
   llmProvider: createAiSdkLlmProvider({
     api: "/api/agent",
   }),
@@ -236,10 +229,7 @@ const portalSearchTool: ToolDefinition<{ query: string }, { source: string }, un
 };
 
 const runtime = await createAgentRuntime<HostContext, RuntimeSessionData>({
-  model: {
-    provider: "openai",
-    id: "gpt-4.1-mini",
-  },
+  model: { id: "gpt-4.1-mini" },
   llmProvider: createOpenAiCompatibleLlmProvider({
     apiKey: OPENAI_API_KEY,
   }),

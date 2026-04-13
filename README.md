@@ -86,10 +86,7 @@ import { createOpenAiCompatibleLlmProvider } from "web-agent-runtime/openai-comp
 const OPENAI_API_KEY = "your-openai-api-key";
 
 const agent = await createAgentRuntime({
-  model: {
-    provider: "openai",
-    id: "gpt-4.1-mini",
-  },
+  model: { id: "gpt-4.1-mini" },
   llmProvider: createOpenAiCompatibleLlmProvider({
     apiKey: OPENAI_API_KEY,
   }),
@@ -99,6 +96,8 @@ await agent.prompt("Hello");
 ```
 
 This path is only suitable for local experimentation and debugging. For production, it is still better to use `createAiSdkLlmProvider()` so model access stays behind your backend proxy.
+
+Only `model.id` is required. Any other model fields are passed through untouched, but the runtime no longer treats `provider` as a required field.
 
 If you omit `storage`, the runtime uses `IndexedDbAgentStorage` by default. The database name is exported as `DEFAULT_INDEXED_DB_STORAGE_NAME`, and currently defaults to `"web-agent-runtime"`. If you need isolated storage for different products or agent instances, pass an explicit storage instance:
 
@@ -115,10 +114,7 @@ const OPENAI_API_KEY = "your-openai-api-key";
 console.log(DEFAULT_INDEXED_DB_STORAGE_NAME);
 
 const agent = await createAgentRuntime({
-  model: {
-    provider: "openai",
-    id: "gpt-4.1-mini",
-  },
+  model: { id: "gpt-4.1-mini" },
   llmProvider: createOpenAiCompatibleLlmProvider({
     apiKey: OPENAI_API_KEY,
   }),
@@ -135,10 +131,7 @@ import { createAgentRuntime } from "web-agent-runtime";
 import { createAiSdkLlmProvider } from "web-agent-runtime/ai-sdk";
 
 const agent = await createAgentRuntime({
-  model: {
-    provider: "company-proxy",
-    id: "claude-sonnet-4-5",
-  },
+  model: { id: "claude-sonnet-4-5" },
   llmProvider: createAiSdkLlmProvider({
     api: "/api/agent",
   }),
@@ -193,10 +186,7 @@ const portalSearchTool: ToolDefinition<{ query: string }, { source: string }, un
 };
 
 const runtime = await createAgentRuntime<HostContext, RuntimeSessionData>({
-  model: {
-    provider: "openai",
-    id: "gpt-4.1-mini",
-  },
+  model: { id: "gpt-4.1-mini" },
   llmProvider: createOpenAiCompatibleLlmProvider({
     apiKey: OPENAI_API_KEY,
   }),

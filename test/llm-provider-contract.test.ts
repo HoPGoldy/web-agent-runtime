@@ -16,7 +16,6 @@ function createAssistantMessage(text: string): AssistantMessage {
     role: "assistant",
     content: [{ type: "text", text }],
     stopReason: "stop",
-    provider: "proxy",
     model: "claude-test",
     timestamp: 2,
   };
@@ -56,7 +55,7 @@ describe("LLM provider contract", () => {
     }) as LlmProvider<unknown>;
 
     const stream = await provider.stream({
-      model: { provider: "proxy", id: "claude-test" },
+      model: { id: "claude-test" },
       sessionId: "session-1",
       context: {
         systemPrompt: "System prompt",
@@ -88,7 +87,7 @@ describe("LLM provider contract", () => {
     }) as LlmProvider<unknown>;
 
     const stream = await provider.stream({
-      model: { provider: "proxy", id: "claude-test" },
+      model: { id: "claude-test" },
       context: {
         systemPrompt: "System prompt",
         messages: [createUserMessage("fallback")],
@@ -125,7 +124,7 @@ describe("LLM provider contract", () => {
     }));
     const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
       expect(JSON.parse(String(init?.body))).toEqual({
-        chatId: "proxy:claude-test",
+        chatId: "claude-test",
         toolCount: 1,
         custom: true,
       });
@@ -143,7 +142,7 @@ describe("LLM provider contract", () => {
     }) as LlmProvider<unknown>;
 
     const stream = await provider.stream({
-      model: { provider: "proxy", id: "claude-test" },
+      model: { id: "claude-test" },
       context: {
         systemPrompt: "System prompt",
         messages: [createUserMessage("custom")],
@@ -153,7 +152,7 @@ describe("LLM provider contract", () => {
 
     expect(await stream.result()).toEqual(assistantMessage);
     expect(buildBody).toHaveBeenCalledWith({
-      chatId: "proxy:claude-test",
+      chatId: "claude-test",
       sessionId: undefined,
       systemPrompt: "System prompt",
       messages: [createUserMessage("custom")],

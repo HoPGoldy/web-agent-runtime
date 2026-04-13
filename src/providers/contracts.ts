@@ -51,9 +51,7 @@ export interface TokenUsage {
  * Identifies a concrete model selection.
  */
 export interface ModelRef {
-  /** Logical provider name, such as the vendor or integration key. */
-  provider: string;
-  /** Provider-specific model identifier. */
+  /** Model identifier. */
   id: string;
   /** Optional lower-level API variant used to access the model. */
   api?: string;
@@ -63,6 +61,8 @@ export interface ModelRef {
   reasoning?: boolean;
   /** Additional provider-specific metadata for callers or UIs. */
   metadata?: Record<string, unknown>;
+  /** Additional model fields that should flow through untouched. */
+  [key: string]: unknown;
 }
 
 /**

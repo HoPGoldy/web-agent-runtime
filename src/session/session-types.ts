@@ -1,4 +1,5 @@
 import type { ModelRef, ThinkingLevel, TokenUsage } from "../providers";
+import { cloneSerializableValue } from "../runtime/runtime-compat";
 
 /**
  * Current schema version used for persisted runtime session data.
@@ -92,8 +93,6 @@ export interface AssistantMessage {
   content: AssistantContentBlock[];
   /** Reason the provider ended generation. */
   stopReason: "stop" | "length" | "toolUse" | "aborted" | "error";
-  /** Provider name that generated the message. */
-  provider: string;
   /** Model id that generated the message. */
   model: string;
   /** Token usage reported for the assistant response, when available. */
@@ -181,10 +180,12 @@ export interface MessageEntry extends SessionEntryBase {
 export interface ModelChangeEntry extends SessionEntryBase {
   /** Discriminator for a model selection change entry. */
   type: "model_change";
-  /** Provider selected after this entry. */
-  provider: string;
-  /** Model id selected after this entry. */
-  modelId: string;
+  /** Full model selection stored after this entry. */
+  model?: ModelRef;
+  /** Legacy provider value retained for backward compatibility. */
+  provider?: string;
+  /** Legacy model id retained for backward compatibility. */
+  modelId?: string;
 }
 
 /**
@@ -279,15 +280,15 @@ export interface RuntimeSessionView {
 }
 
 function cloneValue<T>(value: T): T {
-  if (typeof globalThis.structuredClone === "function") {
-    return globalThis.structuredClone(value);
-  }
-
-  return JSON.parse(JSON.stringify(value)) as T;
+  return cloneSerializableValue(value);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
+}
+
+function isModelRefRecord(value: unknown): value is ModelRef {
+  return isRecord(value) && typeof value.id === "string";
 }
 
 export function createRuntimeSessionData(metadata?: Record<string, unknown>): RuntimeSessionData {
@@ -436,11 +437,17 @@ export function buildRuntimeSessionView(
         messages = [...messages, cloneValue(entry.message)];
         break;
       case "model_change":
-        model = {
-          ...model,
-          provider: entry.provider,
-          id: entry.modelId,
-        };
+        if (isModelRefRecord(entry.model)) {
+          model = cloneValue(entry.model);
+          break;
+        }
+
+        if (typeof entry.modelId === "string") {
+          const nextModel = cloneValue(model) as ModelRef & { provider?: unknown };
+          nextModel.id = entry.modelId;
+          delete nextModel.provider;
+          model = nextModel;
+        }
         break;
       case "thinking_level_change":
         thinkingLevel = entry.thinkingLevel;
@@ -501,7 +508,7 @@ export function isRuntimeSessionData(value: unknown): value is RuntimeSessionDat
       case "message":
         return "message" in entry;
       case "model_change":
-        return typeof entry.provider === "string" && typeof entry.modelId === "string";
+        return isModelRefRecord(entry.model) || typeof entry.modelId === "string";
       case "thinking_level_change":
         return typeof entry.thinkingLevel === "string";
       case "compaction":

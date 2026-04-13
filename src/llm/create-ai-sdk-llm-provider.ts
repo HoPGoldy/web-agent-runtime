@@ -1,6 +1,7 @@
 import type { AssistantStreamEvent, LlmProvider, LlmToolDefinition } from "../providers";
 import type { AssistantMessage, ToolCallBlock } from "../session/session-types";
 import { createResultStream } from "./llm-provider-interface";
+import { resolveFetchImplementation } from "../runtime/runtime-compat";
 
 /**
  * Input used to build the request body for the AI SDK provider adapter.
@@ -130,7 +131,7 @@ export function createAiSdkLlmProvider<TMessage = unknown>(
       const tools = request.context.tools ?? [];
       const body = options.buildBody
         ? await options.buildBody({
-            chatId: request.sessionId ?? `${request.model.provider}:${request.model.id}`,
+            chatId: request.sessionId ?? request.model.id,
             sessionId: request.sessionId,
             systemPrompt: request.context.systemPrompt,
             messages: request.context.messages as TMessage[],
@@ -142,7 +143,7 @@ export function createAiSdkLlmProvider<TMessage = unknown>(
             messages: request.context.messages,
             tools,
           });
-      const response = await (options.fetch ?? globalThis.fetch)(options.api, {
+      const response = await resolveFetchImplementation(options.fetch)(options.api, {
         method: "POST",
         headers: await resolveHeaders(options.headers),
         body: JSON.stringify(body),

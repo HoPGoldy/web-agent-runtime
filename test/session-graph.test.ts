@@ -9,6 +9,7 @@ import {
   createRuntimeSessionData,
   createThinkingLevelChangeEntry,
   extractBranchSessionData,
+  isRuntimeSessionData,
   type AssistantMessage,
   type UserMessage,
 } from "../src/session/session-types";
@@ -22,17 +23,11 @@ function createUserMessage(id: string, content: string, timestamp: number): User
   };
 }
 
-function createAssistantMessage(
-  provider: string,
-  model: string,
-  content: string,
-  timestamp: number,
-): AssistantMessage {
+function createAssistantMessage(model: string, content: string, timestamp: number): AssistantMessage {
   return {
     role: "assistant",
     content: [{ type: "text", text: content }],
     stopReason: "stop",
-    provider,
     model,
     timestamp,
   };
@@ -43,6 +38,7 @@ describe("runtime session graph", () => {
     const initialModel: ModelRef = {
       provider: "test-provider",
       id: "model-a",
+      reasoning: true,
     };
     const sessionData = createRuntimeSessionData();
     const withUser = appendSessionEntry(
@@ -60,8 +56,11 @@ describe("runtime session graph", () => {
         id: "entry-model",
         parentId: "entry-user",
         timestamp: "2026-04-09T00:00:01.000Z",
-        provider: "test-provider",
-        modelId: "model-b",
+        model: {
+          id: "model-b",
+          api: "responses",
+          metadata: { tier: "test" },
+        },
       }),
     );
     const withThinking = appendSessionEntry(
@@ -79,7 +78,7 @@ describe("runtime session graph", () => {
         id: "entry-assistant",
         parentId: "entry-thinking",
         timestamp: "2026-04-09T00:00:03.000Z",
-        message: createAssistantMessage("test-provider", "model-b", "world", 2),
+        message: createAssistantMessage("model-b", "world", 2),
       }),
     );
 
@@ -91,10 +90,47 @@ describe("runtime session graph", () => {
     expect(fullSession.headEntryId).toBe("entry-assistant");
     expect(view.messages).toEqual([
       createUserMessage("user-1", "hello", 1),
-      createAssistantMessage("test-provider", "model-b", "world", 2),
+      createAssistantMessage("model-b", "world", 2),
     ]);
-    expect(view.model).toEqual({ provider: "test-provider", id: "model-b" });
+    expect(view.model).toEqual({
+      id: "model-b",
+      api: "responses",
+      metadata: { tier: "test" },
+    });
     expect(view.thinkingLevel).toBe("high");
+  });
+
+  it("accepts legacy model change entries without consuming provider", () => {
+    const legacyData = {
+      version: 1,
+      headEntryId: "entry-model",
+      entries: [
+        {
+          id: "entry-model",
+          parentId: null,
+          timestamp: "2026-04-09T00:00:01.000Z",
+          type: "model_change",
+          provider: "legacy-provider",
+          modelId: "model-b",
+        },
+      ],
+    };
+
+    expect(isRuntimeSessionData(legacyData)).toBe(true);
+
+    const view = buildRuntimeSessionView(legacyData, {
+      model: {
+        provider: "legacy-provider",
+        id: "model-a",
+        reasoning: true,
+      },
+      thinkingLevel: "off",
+    });
+
+    expect(view.model).toEqual({
+      id: "model-b",
+      reasoning: true,
+    });
   });
 
   it("extracts a forkable branch from a chosen source entry", () => {
@@ -114,7 +150,7 @@ describe("runtime session graph", () => {
         id: "entry-2",
         parentId: "entry-1",
         timestamp: "2026-04-09T00:00:01.000Z",
-        message: createAssistantMessage("provider", "model-a", "second", 2),
+        message: createAssistantMessage("model-a", "second", 2),
       }),
     );
     const third = appendSessionEntry(
@@ -149,7 +185,7 @@ describe("runtime session graph", () => {
         id: "entry-2",
         parentId: "entry-1",
         timestamp: "2026-04-09T00:00:01.000Z",
-        message: createAssistantMessage("provider", "model-a", "second", 2),
+        message: createAssistantMessage("model-a", "second", 2),
       }),
     );
 

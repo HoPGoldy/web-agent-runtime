@@ -36,22 +36,14 @@ import {
 import { AgentLoopEngine } from "./agent-loop";
 import { compactRuntimeSession } from "./compaction";
 import { createRuntimeLogger, traceRuntimeDebug, traceRuntimeInfo, type RuntimeLogger } from "./debug";
+import { cloneSerializableValue } from "./runtime-compat";
 
 function cloneModel(model: ModelRef): ModelRef {
-  return {
-    ...model,
-    metadata: model.metadata ? { ...model.metadata } : undefined,
-  };
+  return cloneSerializableValue(model);
 }
 
 function cloneMessages(messages: AgentMessage[]) {
-  return messages.map((message) => {
-    if (typeof globalThis.structuredClone === "function") {
-      return globalThis.structuredClone(message);
-    }
-
-    return JSON.parse(JSON.stringify(message)) as AgentMessage;
-  });
+  return messages.map((message) => cloneSerializableValue(message));
 }
 
 function createEmptyState(options: {

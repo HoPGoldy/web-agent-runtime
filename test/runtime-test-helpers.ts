@@ -16,7 +16,6 @@ export function createAssistantTextMessage(text: string, timestamp = Date.now())
     role: "assistant",
     content: [{ type: "text", text }],
     stopReason: "stop",
-    provider: "proxy",
     model: "claude-test",
     timestamp,
   };
@@ -30,7 +29,6 @@ export function createAssistantToolCallMessage(
     role: "assistant",
     content: [toolCall],
     stopReason: "toolUse",
-    provider: "proxy",
     model: "claude-test",
     timestamp,
   };

@@ -66,7 +66,7 @@ describe("createOpenAiCompatibleLlmProvider", () => {
     }) as LlmProvider<unknown>;
 
     const stream = await provider.stream({
-      model: { provider: "qwen", id: "qwen-plus" },
+      model: { id: "qwen-plus" },
       maxTokens: 128,
       context: {
         systemPrompt: "System prompt",
@@ -92,7 +92,6 @@ describe("createOpenAiCompatibleLlmProvider", () => {
       role: "assistant",
       content: [{ type: "text", text: "hello" }],
       stopReason: "stop",
-      provider: "qwen",
       model: "qwen-plus",
       timestamp: expect.any(Number),
       usage: {
@@ -118,7 +117,7 @@ describe("createOpenAiCompatibleLlmProvider", () => {
     } satisfies CreateOpenAiCompatibleLlmProviderOptions) as LlmProvider<unknown>;
 
     const stream = await provider.stream({
-      model: { provider: "qwen", id: "qwen-plus" },
+      model: { id: "qwen-plus" },
       context: {
         systemPrompt: "System prompt",
         messages: [createUserMessage("update the textarea")],
@@ -186,7 +185,7 @@ describe("createOpenAiCompatibleLlmProvider", () => {
     }) as LlmProvider<unknown>;
 
     const stream = await provider.stream({
-      model: { provider: "openai", id: "gpt-4.1-mini" },
+      model: { id: "gpt-4.1-mini" },
       context: {
         systemPrompt: "System prompt",
         messages: [createUserMessage("hello")],
@@ -209,7 +208,6 @@ describe("createOpenAiCompatibleLlmProvider", () => {
       role: "assistant",
       content: [{ type: "text", text: "fallback" }],
       stopReason: "stop",
-      provider: "openai",
       model: "gpt-4.1-mini",
       timestamp: expect.any(Number),
       usage: {

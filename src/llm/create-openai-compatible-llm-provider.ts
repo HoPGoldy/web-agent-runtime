@@ -6,6 +6,7 @@ import type {
   ToolResultContentBlock,
 } from "../session/session-types";
 import { createResultStream } from "./llm-provider-interface";
+import { cloneSerializableValue, resolveFetchImplementation } from "../runtime/runtime-compat";
 
 export interface CreateOpenAiCompatibleLlmProviderOptions {
   apiKey: string;
@@ -203,11 +204,7 @@ function createQueuedResultStream<TEvent, TResult>() {
 }
 
 function cloneAssistantMessage(message: AssistantMessage) {
-  if (typeof globalThis.structuredClone === "function") {
-    return globalThis.structuredClone(message);
-  }
-
-  return JSON.parse(JSON.stringify(message)) as AssistantMessage;
+  return cloneSerializableValue(message);
 }
 
 function createPartialAssistantMessage(request: LlmStreamRequest<AssistantMessage>): AssistantMessage {
@@ -215,7 +212,6 @@ function createPartialAssistantMessage(request: LlmStreamRequest<AssistantMessag
     role: "assistant",
     content: [],
     stopReason: "stop",
-    provider: request.model.provider,
     model: request.model.id,
     timestamp: Date.now(),
   };
@@ -501,7 +497,6 @@ function toAssistantMessage(
     role: "assistant",
     content,
     stopReason: mapFinishReason(choice.finish_reason, toolCalls.length > 0),
-    provider: request.model.provider,
     model: payload.model ?? request.model.id,
     timestamp: Date.now(),
     usage: toTokenUsage(payload.usage),
@@ -850,12 +845,15 @@ export function createOpenAiCompatibleLlmProvider(
       const requestBody = options.buildBody
         ? await options.buildBody(request)
         : buildDefaultRequestBody(request, options);
-      const response = await (options.fetch ?? globalThis.fetch)(resolveChatCompletionsUrl(options.baseUrl), {
-        method: "POST",
-        headers: createRequestHeaders(options, resolvedHeaders),
-        body: JSON.stringify(requestBody),
-        signal: request.signal,
-      });
+      const response = await resolveFetchImplementation(options.fetch)(
+        resolveChatCompletionsUrl(options.baseUrl),
+        {
+          method: "POST",
+          headers: createRequestHeaders(options, resolvedHeaders),
+          body: JSON.stringify(requestBody),
+          signal: request.signal,
+        },
+      );
 
       if (!response.ok) {
         const bodyText = await response.text();
