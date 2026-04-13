@@ -1,6 +1,6 @@
 import type { ToolDefinition } from "../src/providers";
 import type { AssistantMessage, ToolCallBlock, UserMessage } from "../src/types/session";
-import { createResultStream } from "../src/entries/provider-utils";
+import { createResultStream } from "../src/utils/result-stream";
 import type { LlmProvider } from "../src/providers";
 
 export function createUserMessage(text: string, timestamp = Date.now()): UserMessage {

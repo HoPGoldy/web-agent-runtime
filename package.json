@@ -13,10 +13,6 @@
     "./unsafe-openai": {
       "types": "./dist/unsafe-openai.d.ts",
       "import": "./dist/unsafe-openai.js"
-    },
-    "./provider-utils": {
-      "types": "./dist/provider-utils.d.ts",
-      "import": "./dist/provider-utils.js"
     }
   },
   "files": [

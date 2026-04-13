@@ -243,14 +243,13 @@ The root entry exposes the runtime-first core surface:
 Optional LLM integrations are isolated behind subpath exports:
 
 - `web-agent-runtime/unsafe-openai`: `createUnsafeOpenAiProvider`
-- `web-agent-runtime/provider-utils`: `createResultStream`
 
 ## Repository Layout
 
 - `src/runtime/`: runtime loop, events, compaction, logging
 - `src/session/`: session records, session graph types, codec, runtime session store
 - `src/providers/`: provider contracts and prompt/tool abstractions
-- `src/llm/`: provider adapters and result-stream helpers
+- `src/llm/`: provider adapters
 - `src/storage/`: IndexedDB persistence implementation
 - `src/tools/`: optional built-in browser demo tools
 - `demo/`: Vite + React demo for validating browser-side runtime behavior

@@ -16,7 +16,7 @@
 - 根入口导出 `createAgentRuntime`、`createJsonSessionDataCodec`
 - 根入口同时导出 runtime、session、provider 的核心类型，方便浏览器宿主直接集成
 - `IndexedDbAgentStorage` 只实现 session metadata + opaque session document 存储语义
-- 可选辅助函数仅围绕当前主路径保留，例如 `createUnsafeOpenAiProvider` 和 `createResultStream`
+- 可选辅助函数仅围绕当前主路径保留，例如 `createUnsafeOpenAiProvider`
 
 也就是说，v1 已经不再并行维护旧的 message-centric facade，而是直接以新 runtime 结构作为唯一公开边界
 

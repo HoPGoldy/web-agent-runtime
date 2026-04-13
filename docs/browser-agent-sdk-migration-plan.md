@@ -27,7 +27,6 @@
 额外保留的辅助函数只服务当前主路径：
 
 - `createUnsafeOpenAiProvider`
-- `createResultStream`
 
 ## 存储语义
 

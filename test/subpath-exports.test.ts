@@ -13,10 +13,4 @@ describe("package subpath exports", () => {
 
     expect(openAiCompatibleModule).toHaveProperty("createUnsafeOpenAiProvider");
   });
-
-  it("exposes provider utilities from the provider-utils subpath", async () => {
-    const providerUtilsModule = await import("../src/entries/provider-utils");
-
-    expect(providerUtilsModule).toHaveProperty("createResultStream");
-  });
 });

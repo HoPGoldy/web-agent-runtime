@@ -1,11 +1,4 @@
-export type {
-  AssistantStreamEvent,
-  LlmContext,
-  LlmProvider,
-  LlmStreamRequest,
-  LlmToolDefinition,
-  ResultStream,
-} from "../types/provider";
+import type { ResultStream } from "../types/provider";
 
 /**
  * Creates an in-memory result stream from a fixed event list and final value.
@@ -14,7 +7,7 @@ export type {
 export function createResultStream<TEvent, TResult>(
   events: TEvent[],
   result: TResult,
-): AsyncIterable<TEvent> & { result(): Promise<TResult> } {
+): ResultStream<TEvent, TResult> {
   return {
     async *[Symbol.asyncIterator]() {
       for (const event of events) {
