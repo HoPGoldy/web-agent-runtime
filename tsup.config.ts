@@ -3,8 +3,7 @@ import { defineConfig } from "tsup";
 export default defineConfig({
   entry: {
     index: "src/index.ts",
-    "ai-sdk": "src/entries/ai-sdk.ts",
-    "openai-compatible": "src/entries/openai-compatible.ts",
+    "unsafe-openai": "src/entries/unsafe-openai.ts",
     "provider-utils": "src/entries/provider-utils.ts",
   },
   format: ["esm"],

@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import {
-  createOpenAiCompatibleLlmProvider,
-  type CreateOpenAiCompatibleLlmProviderOptions,
-} from "../src/entries/openai-compatible";
+  createUnsafeOpenAiProvider,
+  type CreateUnsafeOpenAiProviderOptions,
+} from "../src/entries/unsafe-openai";
 import type { LlmProvider } from "../src/providers";
 import type { AssistantMessage, UserMessage } from "../src/session/session-types";
 
@@ -34,7 +34,7 @@ function createEventStreamResponse(frames: string[]) {
   );
 }
 
-describe("createOpenAiCompatibleLlmProvider", () => {
+describe("createUnsafeOpenAiProvider", () => {
   it("streams text deltas from an OpenAI-compatible SSE response", async () => {
     const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
       expect(init?.method).toBe("POST");
@@ -59,7 +59,7 @@ describe("createOpenAiCompatibleLlmProvider", () => {
       ]);
     });
 
-    const provider = createOpenAiCompatibleLlmProvider({
+    const provider = createUnsafeOpenAiProvider({
       apiKey: "test-key",
       baseUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1",
       fetch: fetchMock,
@@ -111,10 +111,10 @@ describe("createOpenAiCompatibleLlmProvider", () => {
       ]),
     );
 
-    const provider = createOpenAiCompatibleLlmProvider({
+    const provider = createUnsafeOpenAiProvider({
       apiKey: "test-key",
       fetch: fetchMock,
-    } satisfies CreateOpenAiCompatibleLlmProviderOptions) as LlmProvider<unknown>;
+    } satisfies CreateUnsafeOpenAiProviderOptions) as LlmProvider<unknown>;
 
     const stream = await provider.stream({
       model: { id: "qwen-plus" },
@@ -179,7 +179,7 @@ describe("createOpenAiCompatibleLlmProvider", () => {
         ),
     );
 
-    const provider = createOpenAiCompatibleLlmProvider({
+    const provider = createUnsafeOpenAiProvider({
       apiKey: "test-key",
       fetch: fetchMock,
     }) as LlmProvider<unknown>;

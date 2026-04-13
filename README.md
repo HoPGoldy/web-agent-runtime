@@ -34,15 +34,13 @@ If your agent only needs to run on the server, this repository is probably not t
 - Session CRUD, fork, compaction, steering, and follow-up flows
 - Pluggable contracts for LLM providers, storage providers, prompt composition, and tools
 - IndexedDB-backed session storage for browser persistence
-- AI SDK-compatible HTTP adapter for connecting browser runtime requests to your backend
 
 ## Architecture
 
 The main runtime path is centered around:
 
 - `createAgentRuntime` for the new runtime API
-- `createOpenAiCompatibleLlmProvider` from `web-agent-runtime/openai-compatible` as the fastest local-validation provider
-- `createAiSdkLlmProvider` from `web-agent-runtime/ai-sdk` for backend-connected model access
+- `createUnsafeOpenAiProvider` from `web-agent-runtime/unsafe-openai` as the browser-direct local-validation provider
 - `IndexedDbAgentStorage` for browser-side session persistence
 - `createJsonSessionDataCodec` for storing runtime session documents
 - `tools[]` plus `getHostContext()` for host capability injection
@@ -77,17 +75,17 @@ npm run typecheck
 
 ## Getting Started
 
-If you just want to boot a browser-side agent, the default local path is to start with the OpenAI-compatible provider:
+If you just want to boot a browser-side agent, the default local-validation path is to start with the unsafe browser-direct OpenAI-compatible provider:
 
 ```ts
 import { createAgentRuntime } from "web-agent-runtime";
-import { createOpenAiCompatibleLlmProvider } from "web-agent-runtime/openai-compatible";
+import { createUnsafeOpenAiProvider } from "web-agent-runtime/unsafe-openai";
 
 const OPENAI_API_KEY = "your-openai-api-key";
 
 const agent = await createAgentRuntime({
   model: { id: "gpt-4.1-mini" },
-  llmProvider: createOpenAiCompatibleLlmProvider({
+  llmProvider: createUnsafeOpenAiProvider({
     apiKey: OPENAI_API_KEY,
   }),
 });
@@ -95,7 +93,7 @@ const agent = await createAgentRuntime({
 await agent.prompt("Hello");
 ```
 
-This path is only suitable for local experimentation and debugging. For production, it is still better to use `createAiSdkLlmProvider()` so model access stays behind your backend proxy.
+This path is only suitable for local experimentation and debugging. For production, implement your own `LlmProvider` and keep model access behind your backend proxy.
 
 Only `model.id` is required. Any other model fields are passed through untouched, but the runtime no longer treats `provider` as a required field.
 
@@ -107,7 +105,7 @@ import {
   DEFAULT_INDEXED_DB_STORAGE_NAME,
   IndexedDbAgentStorage,
 } from "web-agent-runtime";
-import { createOpenAiCompatibleLlmProvider } from "web-agent-runtime/openai-compatible";
+import { createUnsafeOpenAiProvider } from "web-agent-runtime/unsafe-openai";
 
 const OPENAI_API_KEY = "your-openai-api-key";
 
@@ -115,7 +113,7 @@ console.log(DEFAULT_INDEXED_DB_STORAGE_NAME);
 
 const agent = await createAgentRuntime({
   model: { id: "gpt-4.1-mini" },
-  llmProvider: createOpenAiCompatibleLlmProvider({
+  llmProvider: createUnsafeOpenAiProvider({
     apiKey: OPENAI_API_KEY,
   }),
   storage: new IndexedDbAgentStorage({
@@ -124,17 +122,16 @@ const agent = await createAgentRuntime({
 });
 ```
 
-If you want to route requests through your own backend, switch the provider to `createAiSdkLlmProvider()` instead:
+If you want to route requests through your own backend, implement `LlmProvider` in your app and call your proxy from there:
 
 ```ts
-import { createAgentRuntime } from "web-agent-runtime";
-import { createAiSdkLlmProvider } from "web-agent-runtime/ai-sdk";
+import { createAgentRuntime, type LlmProvider } from "web-agent-runtime";
+
+declare const llmProvider: LlmProvider;
 
 const agent = await createAgentRuntime({
   model: { id: "claude-sonnet-4-5" },
-  llmProvider: createAiSdkLlmProvider({
-    api: "/api/agent",
-  }),
+  llmProvider,
 });
 ```
 
@@ -145,12 +142,13 @@ import {
   createAgentRuntime,
   createJsonSessionDataCodec,
   IndexedDbAgentStorage,
+  type LlmProvider,
   type RuntimeSessionData,
   type ToolDefinition,
 } from "web-agent-runtime";
-import { createOpenAiCompatibleLlmProvider } from "web-agent-runtime/openai-compatible";
 
 const OPENAI_API_KEY = "your-openai-api-key";
+declare const llmProvider: LlmProvider;
 
 type HostContext = {
   apiBase: string;
@@ -187,9 +185,7 @@ const portalSearchTool: ToolDefinition<{ query: string }, { source: string }, un
 
 const runtime = await createAgentRuntime<HostContext, RuntimeSessionData>({
   model: { id: "gpt-4.1-mini" },
-  llmProvider: createOpenAiCompatibleLlmProvider({
-    apiKey: OPENAI_API_KEY,
-  }),
+  llmProvider,
   storage: new IndexedDbAgentStorage<RuntimeSessionData>({
     dbName: "company-portal-agent",
   }),
@@ -231,7 +227,7 @@ The intended production model is:
 - Model requests go through your backend proxy
 - API keys stay on the server, not in the frontend bundle
 
-The included demo can call an OpenAI-compatible endpoint directly from the browser for local validation. That is only appropriate for local experiments, not production deployments.
+The included demo can call an OpenAI-compatible endpoint directly from the browser for local validation through `createUnsafeOpenAiProvider()`. That is only appropriate for local experiments, not production deployments.
 
 ## Public API
 
@@ -246,8 +242,7 @@ The root entry exposes the runtime-first core surface:
 
 Optional LLM integrations are isolated behind subpath exports:
 
-- `web-agent-runtime/openai-compatible`: `createOpenAiCompatibleLlmProvider`
-- `web-agent-runtime/ai-sdk`: `createAiSdkLlmProvider`, `createAiSdkToolSet`
+- `web-agent-runtime/unsafe-openai`: `createUnsafeOpenAiProvider`
 - `web-agent-runtime/provider-utils`: `createResultStream`
 
 ## Repository Layout
@@ -255,7 +250,7 @@ Optional LLM integrations are isolated behind subpath exports:
 - `src/runtime/`: runtime loop, events, compaction, logging
 - `src/session/`: session records, session graph types, codec, runtime session store
 - `src/providers/`: provider contracts and prompt/tool abstractions
-- `src/llm/`: AI SDK-oriented provider adapters and result-stream helpers
+- `src/llm/`: provider adapters and result-stream helpers
 - `src/storage/`: IndexedDB persistence implementation
 - `src/tools/`: optional built-in browser demo tools
 - `demo/`: Vite + React demo for validating browser-side runtime behavior

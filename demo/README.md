@@ -2,7 +2,7 @@
 
 一个基于 Vite + React + TypeScript 的本地 demo，用来演示 `web-agent-runtime` 新 runtime SDK：
 
-- OpenAI-compatible LLM provider
+- `createUnsafeOpenAiProvider`
 - textarea CRUD tools
 - localStorage chat tools
 - 运行时 event 面板
@@ -58,6 +58,6 @@ VITE_OPENAI_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
 
 ## 安全说明
 
-这个 demo 会把 `VITE_OPENAI_API_KEY` 注入浏览器，并直接从前端向 OpenAI-compatible 端点发请求。
+这个 demo 会把 `VITE_OPENAI_API_KEY` 注入浏览器，并通过 `createUnsafeOpenAiProvider()` 直接从前端向 OpenAI-compatible 端点发请求。
 
 这只适用于本地 demo 或临时调试。生产环境必须把 key 放到后端，并由后端代理模型调用。

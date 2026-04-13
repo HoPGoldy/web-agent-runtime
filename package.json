@@ -10,13 +10,9 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
-    "./ai-sdk": {
-      "types": "./dist/ai-sdk.d.ts",
-      "import": "./dist/ai-sdk.js"
-    },
-    "./openai-compatible": {
-      "types": "./dist/openai-compatible.d.ts",
-      "import": "./dist/openai-compatible.js"
+    "./unsafe-openai": {
+      "types": "./dist/unsafe-openai.d.ts",
+      "import": "./dist/unsafe-openai.js"
     },
     "./provider-utils": {
       "types": "./dist/provider-utils.d.ts",

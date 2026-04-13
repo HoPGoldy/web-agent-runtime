@@ -9,7 +9,7 @@ import {
   type RuntimeState,
   type RuntimeSessionData,
 } from "web-agent-runtime";
-import { createOpenAiCompatibleLlmProvider } from "web-agent-runtime/openai-compatible";
+import { createUnsafeOpenAiProvider } from "web-agent-runtime/unsafe-openai";
 
 const OPENAI_KEY = import.meta.env.VITE_OPENAI_API_KEY?.trim() || "";
 const OPENAI_BASE_URL = import.meta.env.VITE_OPENAI_BASE_URL?.trim() || "";
@@ -76,7 +76,7 @@ export default function LocalStorageChatApp() {
           provider: "openai",
           id: DEFAULT_MODEL,
         },
-        llmProvider: createOpenAiCompatibleLlmProvider({
+        llmProvider: createUnsafeOpenAiProvider({
           apiKey: OPENAI_KEY,
           baseUrl: OPENAI_BASE_URL || undefined,
         }),

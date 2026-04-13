@@ -20,14 +20,13 @@
 对外只保留以下 runtime-first 入口：
 
 - `createAgentRuntime`
-- `createAiSdkLlmProvider`
 - `createJsonSessionDataCodec`
 - `IndexedDbAgentStorage`
 - runtime、session、provider 的核心类型导出
 
 额外保留的辅助函数只服务当前主路径：
 
-- `createAiSdkToolSet`
+- `createUnsafeOpenAiProvider`
 - `createResultStream`
 
 ## 存储语义

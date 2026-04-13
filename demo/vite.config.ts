@@ -19,12 +19,8 @@ export default defineConfig({
         replacement: fileURLToPath(new URL("../src/index.ts", import.meta.url)),
       },
       {
-        find: /^web-agent-runtime\/ai-sdk$/,
-        replacement: fileURLToPath(new URL("../src/entries/ai-sdk.ts", import.meta.url)),
-      },
-      {
-        find: /^web-agent-runtime\/openai-compatible$/,
-        replacement: fileURLToPath(new URL("../src/entries/openai-compatible.ts", import.meta.url)),
+        find: /^web-agent-runtime\/unsafe-openai$/,
+        replacement: fileURLToPath(new URL("../src/entries/unsafe-openai.ts", import.meta.url)),
       },
       {
         find: /^web-agent-runtime\/provider-utils$/,

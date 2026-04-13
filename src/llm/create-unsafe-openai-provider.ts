@@ -8,7 +8,7 @@ import type {
 import { createResultStream } from "./llm-provider-interface";
 import { cloneSerializableValue, resolveFetchImplementation } from "../runtime/runtime-compat";
 
-export interface CreateOpenAiCompatibleLlmProviderOptions {
+export interface CreateUnsafeOpenAiProviderOptions {
   apiKey: string;
   baseUrl?: string;
   project?: string;
@@ -234,7 +234,7 @@ function resolveChatCompletionsUrl(baseUrl?: string) {
   return `${trimmed.replace(/\/+$/, "")}/chat/completions`;
 }
 
-function createRequestHeaders(options: CreateOpenAiCompatibleLlmProviderOptions, resolved?: HeadersInit) {
+function createRequestHeaders(options: CreateUnsafeOpenAiProviderOptions, resolved?: HeadersInit) {
   const headers = new Headers(resolved);
   headers.set("Content-Type", "application/json");
   headers.set("Authorization", `Bearer ${options.apiKey}`);
@@ -252,7 +252,7 @@ function createRequestHeaders(options: CreateOpenAiCompatibleLlmProviderOptions,
 
 function buildDefaultRequestBody(
   request: LlmStreamRequest<AssistantMessage>,
-  options: CreateOpenAiCompatibleLlmProviderOptions,
+  options: CreateUnsafeOpenAiProviderOptions,
 ) {
   const tools = request.context.tools?.map((tool) => ({
     type: "function" as const,
@@ -836,8 +836,8 @@ function isEventStreamResponse(response: Response) {
   return contentType.includes("text/event-stream");
 }
 
-export function createOpenAiCompatibleLlmProvider(
-  options: CreateOpenAiCompatibleLlmProviderOptions,
+export function createUnsafeOpenAiProvider(
+  options: CreateUnsafeOpenAiProviderOptions,
 ): LlmProvider<AssistantMessage> {
   return {
     async stream(request) {

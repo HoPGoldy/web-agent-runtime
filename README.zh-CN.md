@@ -30,15 +30,13 @@
 - session CRUD、fork、compaction、steering、follow-up
 - 可插拔的 LLM provider、storage provider、prompt composer 和 tools 契约
 - 基于 IndexedDB 的浏览器端 session 持久化
-- AI SDK 兼容的 HTTP 适配层，方便把浏览器请求接到你的后端
 
 ## 架构概览
 
 当前推荐的主路径围绕以下对象展开：
 
 - `createAgentRuntime` 作为新 runtime 入口
-- `createOpenAiCompatibleLlmProvider`，从 `web-agent-runtime/openai-compatible` 导入，作为最快的本地验证 provider
-- `createAiSdkLlmProvider`，从 `web-agent-runtime/ai-sdk` 导入，作为对接后端模型访问的 provider
+- `createUnsafeOpenAiProvider`，从 `web-agent-runtime/unsafe-openai` 导入，作为浏览器直连的本地验证 provider
 - `IndexedDbAgentStorage` 作为浏览器侧存储实现
 - `createJsonSessionDataCodec` 作为默认 session document codec
 - `tools[]` 和 `getHostContext()` 作为宿主能力注入方式
@@ -73,17 +71,17 @@ npm run typecheck
 
 ## 开始使用
 
-如果你只是想先把一个浏览器侧 agent 跑起来，默认可以先用 OpenAI-compatible provider 做本地验证：
+如果你只是想先把一个浏览器侧 agent 跑起来，默认可以先用这个带危险提示的浏览器直连 OpenAI-compatible provider 做本地验证：
 
 ```ts
 import { createAgentRuntime } from "web-agent-runtime";
-import { createOpenAiCompatibleLlmProvider } from "web-agent-runtime/openai-compatible";
+import { createUnsafeOpenAiProvider } from "web-agent-runtime/unsafe-openai";
 
 const OPENAI_API_KEY = "your-openai-api-key";
 
 const agent = await createAgentRuntime({
   model: { id: "gpt-4.1-mini" },
-  llmProvider: createOpenAiCompatibleLlmProvider({
+  llmProvider: createUnsafeOpenAiProvider({
     apiKey: OPENAI_API_KEY,
   }),
 });
@@ -91,7 +89,7 @@ const agent = await createAgentRuntime({
 await agent.prompt("Hello");
 ```
 
-这条路径只适合本地实验和调试，不适合生产环境。生产环境里，仍然建议用 `createAiSdkLlmProvider()` 把模型请求收敛到你自己的后端代理。
+这条路径只适合本地实验和调试，不适合生产环境。生产环境里，应由你自己实现 `LlmProvider`，并把模型请求收敛到后端代理之后。
 
 现在 `model` 里只有 `id` 是必填；其他字段都会原样透传，但 runtime 不再把 `provider` 当成必填语义字段。
 
@@ -103,7 +101,7 @@ import {
   DEFAULT_INDEXED_DB_STORAGE_NAME,
   IndexedDbAgentStorage,
 } from "web-agent-runtime";
-import { createOpenAiCompatibleLlmProvider } from "web-agent-runtime/openai-compatible";
+import { createUnsafeOpenAiProvider } from "web-agent-runtime/unsafe-openai";
 
 const OPENAI_API_KEY = "your-openai-api-key";
 
@@ -111,7 +109,7 @@ console.log(DEFAULT_INDEXED_DB_STORAGE_NAME);
 
 const agent = await createAgentRuntime({
   model: { id: "gpt-4.1-mini" },
-  llmProvider: createOpenAiCompatibleLlmProvider({
+  llmProvider: createUnsafeOpenAiProvider({
     apiKey: OPENAI_API_KEY,
   }),
   storage: new IndexedDbAgentStorage({
@@ -120,17 +118,16 @@ const agent = await createAgentRuntime({
 });
 ```
 
-如果你要接自己的后端代理，可以把 provider 换成 `createAiSdkLlmProvider()`：
+如果你要接自己的后端代理，就在应用侧自己实现 `LlmProvider`：
 
 ```ts
-import { createAgentRuntime } from "web-agent-runtime";
-import { createAiSdkLlmProvider } from "web-agent-runtime/ai-sdk";
+import { createAgentRuntime, type LlmProvider } from "web-agent-runtime";
+
+declare const llmProvider: LlmProvider;
 
 const agent = await createAgentRuntime({
   model: { id: "claude-sonnet-4-5" },
-  llmProvider: createAiSdkLlmProvider({
-    api: "/api/agent",
-  }),
+  llmProvider,
 });
 ```
 
@@ -188,12 +185,13 @@ import {
   createAgentRuntime,
   createJsonSessionDataCodec,
   IndexedDbAgentStorage,
+  type LlmProvider,
   type RuntimeSessionData,
   type ToolDefinition,
 } from "web-agent-runtime";
-import { createOpenAiCompatibleLlmProvider } from "web-agent-runtime/openai-compatible";
 
 const OPENAI_API_KEY = "your-openai-api-key";
+declare const llmProvider: LlmProvider;
 
 type HostContext = {
   apiBase: string;
@@ -230,9 +228,7 @@ const portalSearchTool: ToolDefinition<{ query: string }, { source: string }, un
 
 const runtime = await createAgentRuntime<HostContext, RuntimeSessionData>({
   model: { id: "gpt-4.1-mini" },
-  llmProvider: createOpenAiCompatibleLlmProvider({
-    apiKey: OPENAI_API_KEY,
-  }),
+  llmProvider,
   storage: new IndexedDbAgentStorage<RuntimeSessionData>({
     dbName: "company-portal-agent",
   }),
@@ -274,7 +270,7 @@ const runtime = await createAgentRuntime({
 - 模型请求通过你的后端代理发出
 - API key 放在服务端，而不是打进前端包里
 
-仓库里的 demo 支持直接从浏览器调用 OpenAI-compatible endpoint 做本地验证，但这只适合本地实验和调试，不适合生产环境。
+仓库里的 demo 支持通过 `createUnsafeOpenAiProvider()` 直接从浏览器调用 OpenAI-compatible endpoint 做本地验证，但这只适合本地实验和调试，不适合生产环境。
 
 ## 对外 API
 
@@ -289,8 +285,7 @@ const runtime = await createAgentRuntime({
 
 可选 LLM 集成通过子入口单独暴露：
 
-- `web-agent-runtime/openai-compatible`：`createOpenAiCompatibleLlmProvider`
-- `web-agent-runtime/ai-sdk`：`createAiSdkLlmProvider`、`createAiSdkToolSet`
+- `web-agent-runtime/unsafe-openai`：`createUnsafeOpenAiProvider`
 - `web-agent-runtime/provider-utils`：`createResultStream`
 
 ## 仓库结构
@@ -298,7 +293,7 @@ const runtime = await createAgentRuntime({
 - `src/runtime/`：runtime loop、事件、compaction、日志
 - `src/session/`：session record、session graph 类型、codec、runtime session store
 - `src/providers/`：provider 契约和 prompt/tool 抽象
-- `src/llm/`：面向 AI SDK 的 provider 适配和结果流辅助函数
+- `src/llm/`：provider 适配和结果流辅助函数
 - `src/storage/`：IndexedDB 持久化实现
 - `src/tools/`：可选的内置浏览器 demo tools
 - `demo/`：用 Vite + React 写的浏览器端验证 demo
