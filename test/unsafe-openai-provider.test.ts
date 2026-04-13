@@ -2,8 +2,8 @@ import { describe, expect, it, vi } from "vitest";
 import {
   createUnsafeOpenAiProvider,
   type CreateUnsafeOpenAiProviderOptions,
-} from "../src/entries/unsafe-openai";
-import type { LlmProvider } from "../src/providers";
+} from "../src/llm/create-unsafe-openai-provider";
+import type { LlmProvider } from "../src/types/provider";
 import type { AssistantMessage, UserMessage } from "../src/types/session";
 
 function createUserMessage(text: string): UserMessage {

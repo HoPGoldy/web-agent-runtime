@@ -9,7 +9,7 @@ describe("package subpath exports", () => {
   });
 
   it("exposes the unsafe OpenAI adapter from its subpath", async () => {
-    const openAiCompatibleModule = await import("../src/entries/unsafe-openai");
+    const openAiCompatibleModule = await import("../src/llm/create-unsafe-openai-provider");
 
     expect(openAiCompatibleModule).toHaveProperty("createUnsafeOpenAiProvider");
   });

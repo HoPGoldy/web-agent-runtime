@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ModelRef } from "../src/providers";
+import type { ModelRef } from "../src/types/provider";
 import type { AssistantMessage, UserMessage } from "../src/types/session";
 import {
   appendSessionEntry,

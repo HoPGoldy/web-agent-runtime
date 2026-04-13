@@ -20,11 +20,7 @@ export default defineConfig({
       },
       {
         find: /^web-agent-runtime\/unsafe-openai$/,
-        replacement: fileURLToPath(new URL("../src/entries/unsafe-openai.ts", import.meta.url)),
-      },
-      {
-        find: /^web-agent-runtime\/provider-utils$/,
-        replacement: fileURLToPath(new URL("../src/entries/provider-utils.ts", import.meta.url)),
+        replacement: fileURLToPath(new URL("../src/llm/create-unsafe-openai-provider.ts", import.meta.url)),
       },
     ],
   },

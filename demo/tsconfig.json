@@ -7,8 +7,7 @@
     "moduleResolution": "Bundler",
     "paths": {
       "web-agent-runtime": ["../src/index.ts"],
-      "web-agent-runtime/unsafe-openai": ["../src/entries/unsafe-openai.ts"],
-      "web-agent-runtime/provider-utils": ["../src/entries/provider-utils.ts"]
+      "web-agent-runtime/unsafe-openai": ["../src/llm/create-unsafe-openai-provider.ts"]
     },
     "allowImportingTsExtensions": false,
     "resolveJsonModule": true,

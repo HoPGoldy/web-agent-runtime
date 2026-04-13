@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createAgentRuntime } from "../src/runtime/agent-runtime";
 import { DEFAULT_INDEXED_DB_STORAGE_NAME } from "../src/index";
-import type { LlmProvider } from "../src/providers";
+import type { LlmProvider } from "../src/types/provider";
 import type { AssistantMessage, RuntimeSessionData } from "../src/types/session";
 import { IndexedDbAgentStorage } from "../src/storage/indexed-db-agent-storage";
 import {

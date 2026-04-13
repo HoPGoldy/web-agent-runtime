@@ -286,14 +286,13 @@ const runtime = await createAgentRuntime({
 可选 LLM 集成通过子入口单独暴露：
 
 - `web-agent-runtime/unsafe-openai`：`createUnsafeOpenAiProvider`
-- `web-agent-runtime/provider-utils`：`createResultStream`
 
 ## 仓库结构
 
 - `src/runtime/`：runtime loop、事件、compaction、日志
 - `src/session/`：session record、session graph 类型、codec、runtime session store
-- `src/providers/`：provider 契约和 prompt/tool 抽象
-- `src/llm/`：provider 适配和结果流辅助函数
+- `src/types/`：按模块拆分的 agent、runtime、session、provider、storage、tool 类型
+- `src/llm/`：provider 适配实现
 - `src/storage/`：IndexedDB 持久化实现
 - `src/tools/`：可选的内置浏览器 demo tools
 - `demo/`：用 Vite + React 写的浏览器端验证 demo

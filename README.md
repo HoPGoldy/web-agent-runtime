@@ -248,7 +248,7 @@ Optional LLM integrations are isolated behind subpath exports:
 
 - `src/runtime/`: runtime loop, events, compaction, logging
 - `src/session/`: session records, session graph types, codec, runtime session store
-- `src/providers/`: provider contracts and prompt/tool abstractions
+- `src/types/`: agent, runtime, session, provider, storage, and tool types split by module
 - `src/llm/`: provider adapters
 - `src/storage/`: IndexedDB persistence implementation
 - `src/tools/`: optional built-in browser demo tools
