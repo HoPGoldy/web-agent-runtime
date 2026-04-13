@@ -17,10 +17,7 @@ import type {
   UpdateSessionInput,
 } from "../session";
 import { RuntimeSessionStore } from "../session/runtime-session";
-import {
-  DEFAULT_INDEXED_DB_STORAGE_NAME,
-  IndexedDbAgentStorage,
-} from "../storage/indexed-db-agent-storage";
+import { DEFAULT_INDEXED_DB_STORAGE_NAME, IndexedDbAgentStorage } from "../storage/indexed-db-agent-storage";
 import {
   type AfterToolCallContext,
   type AfterToolCallResult,
