@@ -41,7 +41,7 @@
 当前推荐的主路径围绕以下对象展开：
 
 - `createAgentRuntime` 作为新 runtime 入口
-- `createAiSdkLlmProvider` 作为对接后端模型访问的 provider
+- `createAiSdkLlmProvider`，从 `web-agent-runtime/ai-sdk` 导入，作为对接后端模型访问的 provider
 - `IndexedDbAgentStorage` 作为浏览器侧存储实现
 - `createJsonSessionDataCodec` 作为默认 session document codec
 - `tools[]` 和 `getHostContext()` 作为宿主能力注入方式
@@ -79,12 +79,12 @@ npm run typecheck
 ```ts
 import {
   createAgentRuntime,
-  createAiSdkLlmProvider,
   createJsonSessionDataCodec,
   IndexedDbAgentStorage,
   type RuntimeSessionData,
   type ToolDefinition,
 } from "web-agent-runtime";
+import { createAiSdkLlmProvider } from "web-agent-runtime/ai-sdk";
 
 type HostContext = {
   apiBase: string;
@@ -175,20 +175,19 @@ const runtime = await createAgentRuntime({
 
 ## 对外 API
 
-当前包只保留一条 runtime-first 主路径：
+根入口只保留 runtime-first 核心路径：
 
 - `createAgentRuntime`
-- `createAiSdkLlmProvider`
 - `createJsonSessionDataCodec`
 - `createLocalStorageTools`，用于简单的浏览器侧 localStorage CRUD demo
 - `IndexedDbAgentStorage`
 - runtime、session、provider 的核心类型
 
-同时保留少量 AI SDK 互操作辅助函数：
+可选 LLM 集成通过子入口单独暴露：
 
-- `createOpenAiCompatibleLlmProvider`，用于直接对接可信的 OpenAI-compatible Chat endpoint 做本地验证
-- `createAiSdkToolSet`
-- `createResultStream`
+- `web-agent-runtime/ai-sdk`：`createAiSdkLlmProvider`、`createAiSdkToolSet`
+- `web-agent-runtime/openai-compatible`：`createOpenAiCompatibleLlmProvider`
+- `web-agent-runtime/provider-utils`：`createResultStream`
 
 ## 仓库结构
 

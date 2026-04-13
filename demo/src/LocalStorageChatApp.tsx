@@ -2,7 +2,6 @@ import { useEffect, useEffectEvent, useRef, useState } from "react";
 import {
   createAgentRuntime,
   createLocalStorageTools,
-  createOpenAiCompatibleLlmProvider,
   IndexedDbAgentStorage,
   type AgentMessage,
   type AgentRuntime,
@@ -10,6 +9,7 @@ import {
   type RuntimeState,
   type RuntimeSessionData,
 } from "web-agent-runtime";
+import { createOpenAiCompatibleLlmProvider } from "web-agent-runtime/openai-compatible";
 
 const OPENAI_KEY = import.meta.env.VITE_OPENAI_API_KEY?.trim() || "";
 const OPENAI_BASE_URL = import.meta.env.VITE_OPENAI_BASE_URL?.trim() || "";

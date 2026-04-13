@@ -4,10 +4,23 @@
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "sideEffects": false,
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./ai-sdk": {
+      "types": "./dist/ai-sdk.d.ts",
+      "import": "./dist/ai-sdk.js"
+    },
+    "./openai-compatible": {
+      "types": "./dist/openai-compatible.d.ts",
+      "import": "./dist/openai-compatible.js"
+    },
+    "./provider-utils": {
+      "types": "./dist/provider-utils.d.ts",
+      "import": "./dist/provider-utils.js"
     }
   },
   "files": [

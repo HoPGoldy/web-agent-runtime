@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createAiSdkToolSet } from "../src/llm/create-ai-sdk-tool-set";
+import { createAiSdkToolSet } from "../src/entries/ai-sdk";
 
 describe("createAiSdkToolSet", () => {
   it("creates a tool map keyed by tool name", () => {

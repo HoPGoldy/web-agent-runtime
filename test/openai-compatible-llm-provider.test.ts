@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   createOpenAiCompatibleLlmProvider,
   type CreateOpenAiCompatibleLlmProviderOptions,
-} from "../src/llm/create-openai-compatible-llm-provider";
+} from "../src/entries/openai-compatible";
 import type { LlmProvider } from "../src/providers";
 import type { AssistantMessage, UserMessage } from "../src/session/session-types";
 

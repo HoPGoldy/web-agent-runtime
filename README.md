@@ -41,7 +41,7 @@ If your agent only needs to run on the server, this repository is probably not t
 The main runtime path is centered around:
 
 - `createAgentRuntime` for the new runtime API
-- `createAiSdkLlmProvider` for backend-connected model access
+- `createAiSdkLlmProvider` from `web-agent-runtime/ai-sdk` for backend-connected model access
 - `IndexedDbAgentStorage` for browser-side session persistence
 - `createJsonSessionDataCodec` for storing runtime session documents
 - `tools[]` plus `getHostContext()` for host capability injection
@@ -79,12 +79,12 @@ npm run typecheck
 ```ts
 import {
   createAgentRuntime,
-  createAiSdkLlmProvider,
   createJsonSessionDataCodec,
   IndexedDbAgentStorage,
   type RuntimeSessionData,
   type ToolDefinition,
 } from "web-agent-runtime";
+import { createAiSdkLlmProvider } from "web-agent-runtime/ai-sdk";
 
 type HostContext = {
   apiBase: string;
@@ -175,20 +175,19 @@ The included demo can call an OpenAI-compatible endpoint directly from the brows
 
 ## Public API
 
-The package exposes a single runtime-first surface:
+The root entry exposes the runtime-first core surface:
 
 - `createAgentRuntime`
-- `createAiSdkLlmProvider`
 - `createJsonSessionDataCodec`
 - `createLocalStorageTools` for simple browser-side localStorage CRUD demos
 - `IndexedDbAgentStorage`
 - runtime, session, and provider core types
 
-Optional helpers remain available for AI SDK interop and stream testing:
+Optional LLM integrations are isolated behind subpath exports:
 
-- `createOpenAiCompatibleLlmProvider` for direct browser-side validation against trusted OpenAI-compatible chat endpoints
-- `createAiSdkToolSet`
-- `createResultStream`
+- `web-agent-runtime/ai-sdk`: `createAiSdkLlmProvider`, `createAiSdkToolSet`
+- `web-agent-runtime/openai-compatible`: `createOpenAiCompatibleLlmProvider`
+- `web-agent-runtime/provider-utils`: `createResultStream`
 
 ## Repository Layout
 

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { createAiSdkLlmProvider, type BuildAiSdkBodyOptions } from "../src/llm/create-ai-sdk-llm-provider";
+import { createAiSdkLlmProvider, type BuildAiSdkBodyOptions } from "../src/entries/ai-sdk";
 import type { LlmProvider } from "../src/providers";
 import type { AssistantMessage, UserMessage } from "../src/session/session-types";
 

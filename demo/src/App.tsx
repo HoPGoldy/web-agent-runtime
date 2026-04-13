@@ -1,13 +1,13 @@
 import { startTransition, useDeferredValue, useEffect, useEffectEvent, useRef, useState } from "react";
 import {
   createAgentRuntime,
-  createOpenAiCompatibleLlmProvider,
   IndexedDbAgentStorage,
   type AgentRuntime,
   type RuntimeEvent,
   type RuntimeState,
   type RuntimeSessionData,
 } from "web-agent-runtime";
+import { createOpenAiCompatibleLlmProvider } from "web-agent-runtime/openai-compatible";
 import {
   extractAssistantText,
   extractToolCalls,
