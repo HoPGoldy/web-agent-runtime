@@ -12,7 +12,7 @@ import type {
 import { createJsonSessionDataCodec } from "./session-data-codec";
 import { createRuntimeSessionData, extractBranchSessionData } from "./runtime-session-data";
 import type { ForkSessionInput } from "../types/runtime";
-import { traceRuntimeDebug, type RuntimeLogger } from "../runtime/debug";
+import { traceRuntimeDebug, type RuntimeLogger } from "../utils/debug";
 
 export class RuntimeSessionStore<TSessionData = RuntimeSessionData> {
   private readonly codec: SessionDataCodec<TSessionData, RuntimeSessionData>;

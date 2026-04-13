@@ -1,7 +1,16 @@
-import { LogLevel } from "./log-level";
 import type { LoggerOptions, RuntimeLogger } from "../types/runtime";
 
 export type { LoggerCallback, LoggerOptions, RuntimeLogger } from "../types/runtime";
+
+/**
+ * Verbosity levels understood by the runtime logger.
+ */
+export enum LogLevel {
+  Error = 0,
+  Warning = 1,
+  Info = 2,
+  Verbose = 3,
+}
 
 export function createRuntimeLogger(options?: LoggerOptions): RuntimeLogger | undefined {
   if (!options?.loggerCallback) {

@@ -12,8 +12,8 @@ import type {
   StreamAccumulator,
   ToolCallAccumulator,
 } from "../types/unsafe-openai";
-import { cloneSerializableValue, resolveFetchImplementation } from "../runtime/runtime-compat";
 import { createResultStream } from "../utils/result-stream";
+import { cloneSerializableValue, resolveFetchImplementation } from "../utils/runtime-compat";
 export type { CreateUnsafeOpenAiProviderOptions } from "../types/unsafe-openai";
 
 async function resolveHeaders(

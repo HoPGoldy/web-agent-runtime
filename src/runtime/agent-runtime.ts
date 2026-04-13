@@ -42,8 +42,8 @@ import {
 } from "../types/runtime";
 import { AgentLoopEngine } from "./agent-loop";
 import { compactRuntimeSession } from "./compaction";
-import { createRuntimeLogger, traceRuntimeDebug, traceRuntimeInfo, type RuntimeLogger } from "./debug";
-import { cloneSerializableValue } from "./runtime-compat";
+import { cloneSerializableValue } from "../utils/runtime-compat";
+import { createRuntimeLogger, traceRuntimeDebug, traceRuntimeInfo, type RuntimeLogger } from "../utils/debug";
 
 function cloneModel(model: ModelRef): ModelRef {
   return cloneSerializableValue(model);

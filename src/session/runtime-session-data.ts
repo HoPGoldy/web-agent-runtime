@@ -12,7 +12,7 @@ import type {
   SessionEntry,
   ThinkingLevelChangeEntry,
 } from "../types/session";
-import { cloneSerializableValue } from "../runtime/runtime-compat";
+import { cloneSerializableValue } from "../utils/runtime-compat";
 
 /**
  * Current schema version used for persisted runtime session data.

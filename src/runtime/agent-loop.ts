@@ -22,7 +22,7 @@ import {
   traceRuntimeInfo,
   traceRuntimeWarning,
   type RuntimeLogger,
-} from "./debug";
+} from "../utils/debug";
 
 const MAX_TURNS_PER_RUN = 12;
 

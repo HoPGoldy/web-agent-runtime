@@ -15,7 +15,7 @@ import {
   traceRuntimeError,
   traceRuntimeWarning,
   type RuntimeLogger,
-} from "../runtime/debug";
+} from "../utils/debug";
 
 export const DEFAULT_INDEXED_DB_STORAGE_NAME = "web-agent-runtime";
 
