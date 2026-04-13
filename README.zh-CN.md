@@ -2,13 +2,11 @@
 
 [English](./README.md) | 简体中文
 
-`web-agent-runtime` 是一个面向浏览器宿主环境的 agent runtime，适合在 Web 场景里实现类似 Claude Code 的交互式 agent 行为。
+`web-agent-runtime` 是一个面向浏览器宿主环境的 agent runtime，适合在 Web 场景里实现类似 Claude Code 的交互式客户端 agent 行为。
 
 ## 为什么会有这个项目
 
-很多人会觉得，在 Web 里做一个类似 Claude Code 的 agent runtime 没什么意义。对于普通公开网站，这个判断很多时候并不算错；但在一些特殊场景里，浏览器本身就是最合适的运行位置，因为能力就暴露在这里。
-
-典型场景包括：
+很多人会觉得，在 Web 里做一个类似 Claude Code 的客户端 agent 没什么意义。对于普通公开网站，这个判断很多时候并不算错；但在一些特殊场景里，浏览器本身就是最合适的 agent 运行位置，因为能力就暴露在这里。例如：
 
 - 浏览器插件
 - Office 插件和其他嵌入式生产力插件
@@ -26,33 +24,10 @@
 
 ## 核心能力
 
-- 面向浏览器的 runtime 主链路
-- session CRUD、fork、compaction、steering、follow-up
-- 可插拔的 LLM provider、storage provider、prompt composer 和 tools 契约
-- 基于 IndexedDB 的浏览器端 session 持久化
-
-## 架构概览
-
-当前推荐的主路径围绕以下对象展开：
-
-- `createAgentRuntime` 作为新 runtime 入口
-- `createUnsafeOpenAiProvider`，从 `web-agent-runtime/unsafe-openai` 导入，作为浏览器直连的本地验证 provider
-- `IndexedDbAgentStorage` 作为浏览器侧存储实现
-- `createJsonSessionDataCodec` 作为默认 session document codec
-- `tools[]` 和 `getHostContext()` 作为宿主能力注入方式
-
-整体上可以分成四层：
-
-- Runtime 层：agent loop、事件、工具执行、compaction、session 控制
-- Session 层：session graph、历史恢复、codec、revision 管理
-- Provider 层：模型流式输出契约、prompt 组装、tool 元数据
-- Host 层：你的浏览器应用、插件、Office Add-in 或门户系统暴露的能力
-
-## 与 pi-mono 的关系
-
-这个项目在设计时参考了 `pi-mono` 的项目架构。
-
-更具体地说，runtime 控制流、provider 契约、session 数据结构、宿主注入工具这几层的拆分思路，和 `pi-mono` 保持一致的方向：agent 核心尽量收敛，集成边界尽量明确，宿主能力通过可插拔方式接入，而不是写死在核心里。
+- 🌐 面向浏览器开发的纯 js agent runtime：提供了 agent loop、事件系统、session 管理等核心功能
+- 💾 内置 session 增删改查：基于 IndexedDB 的浏览器端 session 持久化
+- 🧭 完备的上下文操作：prompt、continue、followUp、steer、fork、compaction、abort
+- 🧩 完全可定制：模型调用、数据存储、工具定义均通过标准的 interface 实现。
 
 ## 安装
 
@@ -60,92 +35,51 @@
 npm install web-agent-runtime
 ```
 
-如果你是在当前仓库里本地开发：
-
-```bash
-npm install
-npm run build
-npm test
-npm run typecheck
-```
-
 ## 开始使用
 
-如果你只是想先把一个浏览器侧 agent 跑起来，默认可以先用这个带危险提示的浏览器直连 OpenAI-compatible provider 做本地验证：
+你可以使用内置的 openai 兼容的 provider 来构建基础的 agent runtime：
 
 ```ts
-import { createAgentRuntime } from "web-agent-runtime";
+import { createAgentRuntime, createLocalStorageTools } from "web-agent-runtime";
 import { createUnsafeOpenAiProvider } from "web-agent-runtime/unsafe-openai";
 
-const OPENAI_API_KEY = "your-openai-api-key";
+const OPENAI_API_KEY = "srk-xxx";
+const OPENAI_BASE_URL = "https://api.openai.com/v1";
+const OPENAI_MODEL_ID = "gpt-4.1-mini";
 
 const agent = await createAgentRuntime({
-  model: { id: "gpt-4.1-mini" },
+  model: { id: OPENAI_MODEL_ID },
   llmProvider: createUnsafeOpenAiProvider({
     apiKey: OPENAI_API_KEY,
+    baseUrl: OPENAI_BASE_URL,
   }),
-});
-
-await agent.prompt("Hello");
-```
-
-这条路径只适合本地实验和调试，不适合生产环境。生产环境里，应由你自己实现 `LlmProvider`，并把模型请求收敛到后端代理之后。
-
-现在 `model` 里只有 `id` 是必填；其他字段都会原样透传，但 runtime 不再把 `provider` 当成必填语义字段。
-
-如果你不传 `storage`，runtime 默认会使用 `IndexedDbAgentStorage`，数据库名由 `DEFAULT_INDEXED_DB_STORAGE_NAME` 常量给出，当前默认值是 `"web-agent-runtime"`。如果你需要隔离不同业务或不同 agent 实例，可以显式传入自定义 storage：
-
-```ts
-import {
-  createAgentRuntime,
-  DEFAULT_INDEXED_DB_STORAGE_NAME,
-  IndexedDbAgentStorage,
-} from "web-agent-runtime";
-import { createUnsafeOpenAiProvider } from "web-agent-runtime/unsafe-openai";
-
-const OPENAI_API_KEY = "your-openai-api-key";
-
-console.log(DEFAULT_INDEXED_DB_STORAGE_NAME);
-
-const agent = await createAgentRuntime({
-  model: { id: "gpt-4.1-mini" },
-  llmProvider: createUnsafeOpenAiProvider({
-    apiKey: OPENAI_API_KEY,
-  }),
-  storage: new IndexedDbAgentStorage({
-    dbName: "company-portal-agent",
-  }),
+  tools: createLocalStorageTools(),
 });
 ```
 
-如果你要接自己的后端代理，就在应用侧自己实现 `LlmProvider`：
+> 注意，不要在生产环境使用 `createUnsafeOpenAiProvider` 访问 llm，这会直接在前端暴露你的 api key。由自己的后端服务提供 llm 接口。并在前端实现 `LlmProvider` 类型的 llmProvider 来实现接入。
 
-```ts
-import { createAgentRuntime, type LlmProvider } from "web-agent-runtime";
-
-declare const llmProvider: LlmProvider;
-
-const agent = await createAgentRuntime({
-  model: { id: "claude-sonnet-4-5" },
-  llmProvider,
-});
-```
-
-实例化完成后，最常用的是发起 prompt、管理 session，以及订阅 runtime 事件：
+完成！现在你已经获得了一个功能完备的 agent，你可以通过它的订阅事件把状态绑定到 UI。并使用 `prompt` 发起请求：
 
 ```ts
 const unsubscribe = agent.subscribe((event) => {
-  if (event.type === "message_end") {
-    console.log("assistant message:", event.message);
-  }
+  console.log("assistant message:", event);
 });
 
+await agent.prompt("往 localStorage 里写入 demo:greeting=hello");
+
+unsubscribe();
+await agent.destroy();
+```
+
+你还可以使用内置的 session 管理功能来创建、更新、分叉会话：
+
+```ts
 const session = await agent.sessions.create({
   title: "Quick Start Demo",
 });
 
 await agent.prompt("在 localStorage 里写入 demo:greeting=hello");
-await agent.followUp("读取刚才写入的值，并说明你做了什么");
 
 await agent.sessions.update(session.id, {
   title: "Quick Start Demo Updated",
@@ -160,143 +94,16 @@ const forked = await agent.sessions.fork({
 });
 
 await agent.sessions.open(forked.session.id);
-await agent.compact();
-
-unsubscribe();
-await agent.destroy();
 ```
 
-几个常用 API 的用途如下：
+除此之外，web-agent-runtime 还提供了完备的上下文操作，例如：
 
 - `agent.prompt()`：发送一轮新的用户输入
 - `agent.continue()`：在已有上下文上继续生成，不追加新的用户消息
 - `agent.followUp()`：在当前轮结束后追加下一条跟进消息
 - `agent.steer()`：在运行中插入 steering 消息，尝试重定向当前过程
-- `agent.sessions.create()` / `open()` / `list()` / `update()` / `delete()` / `fork()`：管理会话及分支
-- `agent.subscribe()`：监听 runtime 事件流，例如消息结束、工具执行、session 切换
 - `agent.compact()`：压缩历史上下文，减少后续请求负担
-- `agent.setModel()` / `setThinkingLevel()` / `setSystemPrompt()`：动态调整运行参数
-- `agent.abort()` / `destroy()`：中止当前运行或销毁 runtime
-
-## 最小示例
-
-```ts
-import {
-  createAgentRuntime,
-  createJsonSessionDataCodec,
-  IndexedDbAgentStorage,
-  type LlmProvider,
-  type RuntimeSessionData,
-  type ToolDefinition,
-} from "web-agent-runtime";
-
-const OPENAI_API_KEY = "your-openai-api-key";
-declare const llmProvider: LlmProvider;
-
-type HostContext = {
-  apiBase: string;
-};
-
-const portalSearchTool: ToolDefinition<{ query: string }, { source: string }, unknown, HostContext> = {
-  name: "portal_search",
-  description: "Search the company portal for documents and pages.",
-  inputSchema: {
-    type: "object",
-    properties: {
-      query: { type: "string" },
-    },
-    required: ["query"],
-  },
-  async execute({ input, context, signal }) {
-    const response = await fetch(
-      `${context.hostContext.apiBase}/api/search?q=${encodeURIComponent(input.query)}`,
-      { signal },
-    );
-    const data = (await response.json()) as unknown;
-
-    return {
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify(data),
-        },
-      ],
-      details: { source: "portal" },
-    };
-  },
-};
-
-const runtime = await createAgentRuntime<HostContext, RuntimeSessionData>({
-  model: { id: "gpt-4.1-mini" },
-  llmProvider,
-  storage: new IndexedDbAgentStorage<RuntimeSessionData>({
-    dbName: "company-portal-agent",
-  }),
-  sessionDataCodec: createJsonSessionDataCodec(),
-  systemPrompt: "You are an internal portal assistant. Use tools when they help.",
-  thinkingLevel: "minimal",
-  toolExecution: "sequential",
-  getHostContext: () => ({
-    apiBase: window.location.origin,
-  }),
-  tools: [portalSearchTool],
-});
-
-await runtime.sessions.create({ title: "Portal assistant" });
-await runtime.prompt("Find the latest PTO policy and summarize it.");
-```
-
-## 内置 Demo Tools
-
-为了快速做浏览器侧验证，包里也内置了 `createLocalStorageTools()`，会直接提供 `local_storage_read`、`local_storage_create`、`local_storage_update` 和 `local_storage_delete` 这四个 localStorage CRUD 工具。
-
-```ts
-import { createAgentRuntime, createLocalStorageTools } from "web-agent-runtime";
-
-const runtime = await createAgentRuntime({
-  // ...其他 runtime 选项
-  tools: createLocalStorageTools({
-    keyPrefix: "demo:",
-  }),
-});
-```
-
-## 安全边界
-
-推荐的生产模型是：
-
-- runtime 跑在浏览器里
-- tools 跑在浏览器里，并直接调用宿主侧 JavaScript API
-- 模型请求通过你的后端代理发出
-- API key 放在服务端，而不是打进前端包里
-
-仓库里的 demo 支持通过 `createUnsafeOpenAiProvider()` 直接从浏览器调用 OpenAI-compatible endpoint 做本地验证，但这只适合本地实验和调试，不适合生产环境。
-
-## 对外 API
-
-根入口只保留 runtime-first 核心路径：
-
-- `createAgentRuntime`
-- `DEFAULT_INDEXED_DB_STORAGE_NAME`
-- `createJsonSessionDataCodec`
-- `createLocalStorageTools`，用于简单的浏览器侧 localStorage CRUD demo
-- `IndexedDbAgentStorage`
-- runtime、session、provider 的核心类型
-
-可选 LLM 集成通过子入口单独暴露：
-
-- `web-agent-runtime/unsafe-openai`：`createUnsafeOpenAiProvider`
-
-## 仓库结构
-
-- `src/runtime/`：runtime loop、事件、compaction、日志
-- `src/session/`：session record、session graph 类型、codec、runtime session store
-- `src/types/`：按模块拆分的 agent、runtime、session、provider、storage、tool 类型
-- `src/llm/`：provider 适配实现
-- `src/storage/`：IndexedDB 持久化实现
-- `src/tools/`：可选的内置浏览器 demo tools
-- `demo/`：用 Vite + React 写的浏览器端验证 demo
-- `docs/`：接口草案和迁移说明
+- `agent.abort()`：中止当前运行会话
 
 ## Demo
 
@@ -309,9 +116,20 @@ const runtime = await createAgentRuntime({
 
 启动方式见 [`demo/README.md`](./demo/README.md)。
 
-## 当前状态
+## 本地开发
 
-这个仓库现在只保留 runtime-only 浏览器 SDK。公开接口围绕 runtime、session 和 provider 契约组织，不再并行保留旧的 message-centric facade。
+如果你是在当前仓库里本地开发：
+
+```bash
+npm install
+npm run build
+npm test
+npm run typecheck
+```
+
+## 感谢
+
+这个项目在设计时参考了 `pi-mono` 项目的设计。感谢 `pi-mono` 团队的开源贡献，提供了宝贵的参考和启发。
 
 ## License
 

@@ -2,61 +2,32 @@
 
 English | [简体中文](./README.zh-CN.md)
 
-`web-agent-runtime` is a browser-first agent runtime for products that need Claude Code-like agent behavior inside web environments.
+`web-agent-runtime` is an agent runtime for browser host environments, designed for building interactive client-side agent behavior in web products, similar to Claude Code.
 
 ## Why This Exists
 
-Many people assume there is little value in building an agent runtime in the browser. For a generic public website, that is often a fair concern. But there are important cases where the browser is exactly where the capabilities live:
+Many people assume there is little value in building a Claude Code-like client-side agent for the web. For generic public websites, that is often a fair judgment. But in some scenarios, the browser is exactly the right place to run the agent, because that is where the capabilities are exposed. For example:
 
 - Browser extensions
 - Office add-ins and other embedded productivity plugins
-- Internal portals and line-of-business web apps
-- Customer-facing products that expose privileged or host-specific JavaScript APIs
+- Internal portals, business back offices, and SaaS consoles
+- Product interfaces that expose host-specific JavaScript APIs
 
-In those environments, the agent needs to run close to the host UI state and the host APIs. The browser already has the context, the interaction surface, and the capability bridge. This project is designed for that scenario.
+This project is designed for those kinds of web host environments. When you need to provide an interactive agent that can directly access current page state, host context, and browser-side capabilities, this runtime is a suitable foundation. For example:
 
-The runtime lets you connect browser-side tools, host-specific JavaScript APIs, and persistent session state to an agent loop, while still keeping model access behind your own backend proxy.
+- Read or manipulate the current tab
+- Read and modify document state through Office.js
+- Call internal web APIs together with current page context
+- Complete tasks using page state and product-specific tools
 
-## What This Project Is For
-
-Use this project when you need an interactive agent inside a web host that exposes capabilities through JavaScript APIs. Examples:
-
-- A browser extension agent that can inspect or manipulate the current tab
-- An Office add-in agent that can read and update document state through Office.js
-- A company portal assistant that can call internal web APIs and operate on the current page
-- A SaaS product assistant that can work with in-page UI state and product-specific tools
-
-If your agent only needs to run on the server, this repository is probably not the right abstraction.
+Its goal is to connect browser-side tools, host-exposed JavaScript APIs, and persistent session state into an agent loop, while keeping model access behind your own backend proxy. If your agent only needs to run on the server, this repository is probably not the right abstraction layer.
 
 ## Core Capabilities
 
-- Browser-first runtime with session lifecycle management
-- Session CRUD, fork, compaction, steering, and follow-up flows
-- Pluggable contracts for LLM providers, storage providers, prompt composition, and tools
-- IndexedDB-backed session storage for browser persistence
-
-## Architecture
-
-The main runtime path is centered around:
-
-- `createAgentRuntime` for the new runtime API
-- `createUnsafeOpenAiProvider` from `web-agent-runtime/unsafe-openai` as the browser-direct local-validation provider
-- `IndexedDbAgentStorage` for browser-side session persistence
-- `createJsonSessionDataCodec` for storing runtime session documents
-- `tools[]` plus `getHostContext()` for host capability injection
-
-At a high level, the runtime separates concerns into four layers:
-
-- Runtime layer: agent loop, events, tool execution, compaction, session control
-- Session layer: session graph, history reconstruction, codec and revision handling
-- Provider layer: model streaming contracts, prompt composition, tool metadata
-- Host layer: your browser app, extension, Office add-in, or portal-specific tools and APIs
-
-## Relationship to pi-mono
-
-This project was developed with the `pi-mono` architecture as a reference.
-
-In particular, the layering between runtime control flow, provider contracts, session data, and host-injected tools follows the same general design direction: keep the agent core small, keep integrations explicit, and make host capabilities pluggable instead of hardcoded.
+- 🌐 A pure JavaScript agent runtime for browser environments, with core agent loop, event system, and session management capabilities
+- 💾 Built-in session CRUD, backed by IndexedDB for browser-side persistence
+- 🧭 Full context operations: prompt, continue, followUp, steer, fork, compaction, abort
+- 🧩 Fully customizable model access, storage, and tool definitions through standard interfaces
 
 ## Installation
 
@@ -64,7 +35,90 @@ In particular, the layering between runtime control flow, provider contracts, se
 npm install web-agent-runtime
 ```
 
-For local development in this repository:
+## Getting Started
+
+You can use the built-in OpenAI-compatible provider to bootstrap a basic agent runtime:
+
+```ts
+import { createAgentRuntime, createLocalStorageTools } from "web-agent-runtime";
+import { createUnsafeOpenAiProvider } from "web-agent-runtime/unsafe-openai";
+
+const OPENAI_API_KEY = "srk-xxx";
+const OPENAI_BASE_URL = "https://api.openai.com/v1";
+const OPENAI_MODEL_ID = "gpt-4.1-mini";
+
+const agent = await createAgentRuntime({
+  model: { id: OPENAI_MODEL_ID },
+  llmProvider: createUnsafeOpenAiProvider({
+    apiKey: OPENAI_API_KEY,
+    baseUrl: OPENAI_BASE_URL,
+  }),
+  tools: createLocalStorageTools(),
+});
+```
+
+> Do not use `createUnsafeOpenAiProvider` in production to access an LLM, because it exposes your API key directly in the frontend. In production, your own backend should provide the LLM interface, and the frontend should implement an `LlmProvider`-compatible `llmProvider` to integrate with it.
+
+That is enough to get a fully functional agent. You can bind its state to your UI through subscription events, then start a request with `prompt`:
+
+```ts
+const unsubscribe = agent.subscribe((event) => {
+  console.log("assistant message:", event);
+});
+
+await agent.prompt("Write demo:greeting=hello into localStorage");
+
+unsubscribe();
+await agent.destroy();
+```
+
+You can also use the built-in session management to create, update, and fork sessions:
+
+```ts
+const session = await agent.sessions.create({
+  title: "Quick Start Demo",
+});
+
+await agent.prompt("Write demo:greeting=hello into localStorage");
+
+await agent.sessions.update(session.id, {
+  title: "Quick Start Demo Updated",
+});
+
+const sessions = await agent.sessions.list();
+console.log("all sessions:", sessions);
+
+const forked = await agent.sessions.fork({
+  sourceSessionId: session.id,
+  title: "Quick Start Branch",
+});
+
+await agent.sessions.open(forked.session.id);
+```
+
+In addition, `web-agent-runtime` includes full support for core agent operations such as:
+
+- `agent.prompt()`: send a new user input turn
+- `agent.continue()`: continue generation on the existing context without appending a new user message
+- `agent.followUp()`: append the next follow-up message after the current turn completes
+- `agent.steer()`: insert a steering message during execution to try to redirect the current process
+- `agent.compact()`: compact historical context to reduce later request cost
+- `agent.abort()`: abort the active run session
+
+## Demo
+
+This repository includes a local demo in [`demo/`](./demo/) for validating:
+
+- Browser-side tool calls
+- Runtime event streaming
+- Session creation and persistence
+- Model output rendering
+
+See [`demo/README.md`](./demo/README.md) for startup instructions.
+
+## Local Development
+
+If you are developing inside this repository:
 
 ```bash
 npm install
@@ -73,202 +127,9 @@ npm test
 npm run typecheck
 ```
 
-## Getting Started
+## Acknowledgements
 
-If you just want to boot a browser-side agent, the default local-validation path is to start with the unsafe browser-direct OpenAI-compatible provider:
-
-```ts
-import { createAgentRuntime } from "web-agent-runtime";
-import { createUnsafeOpenAiProvider } from "web-agent-runtime/unsafe-openai";
-
-const OPENAI_API_KEY = "your-openai-api-key";
-
-const agent = await createAgentRuntime({
-  model: { id: "gpt-4.1-mini" },
-  llmProvider: createUnsafeOpenAiProvider({
-    apiKey: OPENAI_API_KEY,
-  }),
-});
-
-await agent.prompt("Hello");
-```
-
-This path is only suitable for local experimentation and debugging. For production, implement your own `LlmProvider` and keep model access behind your backend proxy.
-
-Only `model.id` is required. Any other model fields are passed through untouched, but the runtime no longer treats `provider` as a required field.
-
-If you omit `storage`, the runtime uses `IndexedDbAgentStorage` by default. The database name is exported as `DEFAULT_INDEXED_DB_STORAGE_NAME`, and currently defaults to `"web-agent-runtime"`. If you need isolated storage for different products or agent instances, pass an explicit storage instance:
-
-```ts
-import {
-  createAgentRuntime,
-  DEFAULT_INDEXED_DB_STORAGE_NAME,
-  IndexedDbAgentStorage,
-} from "web-agent-runtime";
-import { createUnsafeOpenAiProvider } from "web-agent-runtime/unsafe-openai";
-
-const OPENAI_API_KEY = "your-openai-api-key";
-
-console.log(DEFAULT_INDEXED_DB_STORAGE_NAME);
-
-const agent = await createAgentRuntime({
-  model: { id: "gpt-4.1-mini" },
-  llmProvider: createUnsafeOpenAiProvider({
-    apiKey: OPENAI_API_KEY,
-  }),
-  storage: new IndexedDbAgentStorage({
-    dbName: "company-portal-agent",
-  }),
-});
-```
-
-If you want to route requests through your own backend, implement `LlmProvider` in your app and call your proxy from there:
-
-```ts
-import { createAgentRuntime, type LlmProvider } from "web-agent-runtime";
-
-declare const llmProvider: LlmProvider;
-
-const agent = await createAgentRuntime({
-  model: { id: "claude-sonnet-4-5" },
-  llmProvider,
-});
-```
-
-## Minimal Example
-
-```ts
-import {
-  createAgentRuntime,
-  createJsonSessionDataCodec,
-  IndexedDbAgentStorage,
-  type LlmProvider,
-  type RuntimeSessionData,
-  type ToolDefinition,
-} from "web-agent-runtime";
-
-const OPENAI_API_KEY = "your-openai-api-key";
-declare const llmProvider: LlmProvider;
-
-type HostContext = {
-  apiBase: string;
-};
-
-const portalSearchTool: ToolDefinition<{ query: string }, { source: string }, unknown, HostContext> = {
-  name: "portal_search",
-  description: "Search the company portal for documents and pages.",
-  inputSchema: {
-    type: "object",
-    properties: {
-      query: { type: "string" },
-    },
-    required: ["query"],
-  },
-  async execute({ input, context, signal }) {
-    const response = await fetch(
-      `${context.hostContext.apiBase}/api/search?q=${encodeURIComponent(input.query)}`,
-      { signal },
-    );
-    const data = (await response.json()) as unknown;
-
-    return {
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify(data),
-        },
-      ],
-      details: { source: "portal" },
-    };
-  },
-};
-
-const runtime = await createAgentRuntime<HostContext, RuntimeSessionData>({
-  model: { id: "gpt-4.1-mini" },
-  llmProvider,
-  storage: new IndexedDbAgentStorage<RuntimeSessionData>({
-    dbName: "company-portal-agent",
-  }),
-  sessionDataCodec: createJsonSessionDataCodec(),
-  systemPrompt: "You are an internal portal assistant. Use tools when they help.",
-  thinkingLevel: "minimal",
-  toolExecution: "sequential",
-  getHostContext: () => ({
-    apiBase: window.location.origin,
-  }),
-  tools: [portalSearchTool],
-});
-
-await runtime.sessions.create({ title: "Portal assistant" });
-await runtime.prompt("Find the latest PTO policy and summarize it.");
-```
-
-## Built-in Demo Tools
-
-For quick browser demos, the package also ships `createLocalStorageTools()`, which exposes `local_storage_read`, `local_storage_create`, `local_storage_update`, and `local_storage_delete`.
-
-```ts
-import { createAgentRuntime, createLocalStorageTools } from "web-agent-runtime";
-
-const runtime = await createAgentRuntime({
-  // ...other runtime options
-  tools: createLocalStorageTools({
-    keyPrefix: "demo:",
-  }),
-});
-```
-
-## Security Model
-
-The intended production model is:
-
-- The runtime executes in the browser
-- Tools run in the browser and can use host-specific JavaScript APIs
-- Model requests go through your backend proxy
-- API keys stay on the server, not in the frontend bundle
-
-The included demo can call an OpenAI-compatible endpoint directly from the browser for local validation through `createUnsafeOpenAiProvider()`. That is only appropriate for local experiments, not production deployments.
-
-## Public API
-
-The root entry exposes the runtime-first core surface:
-
-- `createAgentRuntime`
-- `DEFAULT_INDEXED_DB_STORAGE_NAME`
-- `createJsonSessionDataCodec`
-- `createLocalStorageTools` for simple browser-side localStorage CRUD demos
-- `IndexedDbAgentStorage`
-- runtime, session, and provider core types
-
-Optional LLM integrations are isolated behind subpath exports:
-
-- `web-agent-runtime/unsafe-openai`: `createUnsafeOpenAiProvider`
-
-## Repository Layout
-
-- `src/runtime/`: runtime loop, events, compaction, logging
-- `src/session/`: session records, session graph types, codec, runtime session store
-- `src/types/`: agent, runtime, session, provider, storage, and tool types split by module
-- `src/llm/`: provider adapters
-- `src/storage/`: IndexedDB persistence implementation
-- `src/tools/`: optional built-in browser demo tools
-- `demo/`: Vite + React demo for validating browser-side runtime behavior
-- `docs/`: interface draft and migration notes
-
-## Demo
-
-There is a local demo in [`demo/`](./demo/) that validates:
-
-- browser-side tool execution
-- runtime event streaming
-- session creation and persistence
-- model output rendering
-
-See [`demo/README.md`](./demo/README.md) for setup details.
-
-## Status
-
-This repository ships a runtime-only browser SDK. The public surface is centered on runtime, session, and provider contracts, with no legacy message-centric facade kept in parallel.
+This project was designed with reference to the `pi-mono` project. Thanks to the `pi-mono` team for their open source work and the ideas it provided.
 
 ## License
 
