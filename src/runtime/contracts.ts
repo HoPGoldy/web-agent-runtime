@@ -261,8 +261,11 @@ export interface AgentRuntimeOptions<THostContext = unknown, TSessionData = unkn
   model: ModelRef;
   /** Provider implementation that streams assistant responses. */
   llmProvider: LlmProvider<unknown>;
-  /** Storage backend used for session metadata and serialized state. */
-  storage: StorageProvider<TSessionData>;
+  /**
+   * Storage backend used for session metadata and serialized state.
+   * Defaults to IndexedDB-backed storage when running in a browser environment.
+   */
+  storage?: StorageProvider<TSessionData>;
   /** Optional codec translating between stored and runtime session data. */
   sessionDataCodec?: SessionDataCodec<TSessionData, unknown>;
   /** Optional runtime logger configuration. */

@@ -1,4 +1,8 @@
-export { IndexedDbAgentStorage } from "./storage/indexed-db-agent-storage";
+export {
+  DEFAULT_INDEXED_DB_STORAGE_NAME,
+  IndexedDbAgentStorage,
+  type IndexedDbAgentStorageOptions,
+} from "./storage/indexed-db-agent-storage";
 export { createLocalStorageTools, type CreateLocalStorageToolsOptions } from "./tools/local-storage-tools";
 export { createAgentRuntime, LogLevel } from "./runtime";
 export type {

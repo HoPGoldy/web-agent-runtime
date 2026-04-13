@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createAgentRuntime } from "../src/runtime/agent-runtime";
+import { DEFAULT_INDEXED_DB_STORAGE_NAME } from "../src/index";
 import type { LlmProvider } from "../src/providers";
 import type { AssistantMessage } from "../src/session/session-types";
 import type { RuntimeSessionData } from "../src/session/session-types";
@@ -12,6 +13,15 @@ import {
 
 function createStorage(name: string) {
   return new IndexedDbAgentStorage<RuntimeSessionData>({ dbName: name });
+}
+
+function deleteDatabase(name: string) {
+  return new Promise<void>((resolve, reject) => {
+    const request = indexedDB.deleteDatabase(name);
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error);
+    request.onblocked = () => resolve();
+  });
 }
 
 function readAssistantText(message: AssistantMessage | null) {
@@ -108,6 +118,31 @@ describe("agent runtime", () => {
 
     const stored = await storage.loadSessionData(runtime.state.session!.id);
     expect(stored?.data.entries).toHaveLength(2);
+  });
+
+  it("uses the default IndexedDB storage when storage is omitted", async () => {
+    await deleteDatabase(DEFAULT_INDEXED_DB_STORAGE_NAME);
+
+    const runtimeA = await createAgentRuntime({
+      model: { provider: "proxy", id: "claude-test" },
+      llmProvider: createSequenceLlmProvider([createAssistantTextMessage("first answer")]),
+      tools: createStaticTools([]),
+      systemPrompt: "System prompt",
+    });
+
+    await runtimeA.prompt("first question");
+
+    const runtimeB = await createAgentRuntime({
+      model: { provider: "proxy", id: "claude-test" },
+      llmProvider: createSequenceLlmProvider([createAssistantTextMessage("second answer")]),
+      tools: createStaticTools([]),
+      systemPrompt: "System prompt",
+    });
+
+    await runtimeB.sessions.open(runtimeA.state.session!.id);
+
+    expect(runtimeB.state.messages).toEqual(runtimeA.state.messages);
+    expect(runtimeB.state.session?.id).toBe(runtimeA.state.session?.id);
   });
 
   it("rebuilds runtime state when reopening an existing session", async () => {

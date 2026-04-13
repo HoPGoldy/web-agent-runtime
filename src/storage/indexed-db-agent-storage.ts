@@ -17,12 +17,14 @@ import {
   type RuntimeLogger,
 } from "../runtime/debug";
 
+export const DEFAULT_INDEXED_DB_STORAGE_NAME = "web-agent-runtime";
+
 /**
  * Options for creating an IndexedDB-backed storage provider.
  */
-interface IndexedDbAgentStorageOptions {
+export interface IndexedDbAgentStorageOptions {
   /** IndexedDB database name used to store sessions and serialized session data. */
-  dbName: string;
+  dbName?: string;
   /** Database version used for schema upgrades. */
   version?: number;
   /** Optional runtime logger configuration for storage diagnostics. */
@@ -74,8 +76,8 @@ export class IndexedDbAgentStorage<TSessionData = unknown> implements StoragePro
   /**
    * Creates an IndexedDB-backed storage provider suitable for browser runtimes.
    */
-  constructor(options: IndexedDbAgentStorageOptions) {
-    this.dbName = options.dbName;
+  constructor(options: IndexedDbAgentStorageOptions = {}) {
+    this.dbName = options.dbName ?? DEFAULT_INDEXED_DB_STORAGE_NAME;
     this.version = options.version ?? 3;
     this.logger = createRuntimeLogger(options.loggerOptions);
   }

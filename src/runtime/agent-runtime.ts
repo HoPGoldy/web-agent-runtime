@@ -18,6 +18,10 @@ import type {
 } from "../session";
 import { RuntimeSessionStore } from "../session/runtime-session";
 import {
+  DEFAULT_INDEXED_DB_STORAGE_NAME,
+  IndexedDbAgentStorage,
+} from "../storage/indexed-db-agent-storage";
+import {
   type AfterToolCallContext,
   type AfterToolCallResult,
   type AgentRuntime,
@@ -70,6 +74,25 @@ function createEmptyState(options: {
     queuedSteeringMessages: [],
     queuedFollowUpMessages: [],
   };
+}
+
+function resolveStorage<TSessionData, THostContext>(
+  options: AgentRuntimeOptions<THostContext, TSessionData>,
+): StorageProvider<TSessionData> {
+  if (options.storage) {
+    return options.storage;
+  }
+
+  if (typeof indexedDB === "undefined") {
+    throw new Error(
+      "No storage provider was supplied and indexedDB is not available. Pass storage explicitly in this environment.",
+    );
+  }
+
+  return new IndexedDbAgentStorage<TSessionData>({
+    dbName: DEFAULT_INDEXED_DB_STORAGE_NAME,
+    loggerOptions: options.loggerOptions,
+  });
 }
 
 class BrowserAgentRuntime<
@@ -194,7 +217,7 @@ class BrowserAgentRuntime<
       return options.getHostContext();
     };
     this.sessionStore = new RuntimeSessionStore(
-      options.storage as StorageProvider<TSessionData>,
+      resolveStorage(options),
       options.sessionDataCodec as SessionDataCodec<TSessionData, RuntimeSessionData> | undefined,
       this.logger,
     );

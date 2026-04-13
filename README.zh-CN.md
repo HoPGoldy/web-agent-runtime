@@ -6,27 +6,23 @@
 
 ## 为什么会有这个项目
 
-很多人会觉得，在 Web 里做一个类似 Claude Code 的 agent runtime 没什么意义。对于普通公开网站，这个判断很多时候并不算错。但在一些特殊场景里，浏览器本身就是最合适的运行位置，因为能力就暴露在这里：
+很多人会觉得，在 Web 里做一个类似 Claude Code 的 agent runtime 没什么意义。对于普通公开网站，这个判断很多时候并不算错；但在一些特殊场景里，浏览器本身就是最合适的运行位置，因为能力就暴露在这里。
+
+典型场景包括：
 
 - 浏览器插件
 - Office 插件和其他嵌入式生产力插件
 - 公司内部门户、业务后台、SaaS 控制台
 - 暴露了宿主专有 JavaScript API 的产品界面
 
-在这些环境里，agent 需要直接接触当前页面状态、宿主上下文和浏览器侧能力。浏览器并不只是一个 UI 壳，它本身就是能力桥接层。这个项目就是为这种场景设计的。
+这个项目就是为这类 Web 宿主环境设计的。当你需要提供一个可交互的 agent，并且让它直接接触当前页面状态、宿主上下文和浏览器侧能力时，可以使用这个 runtime，例如：
 
-它的目标是把浏览器侧 tools、宿主暴露的 JavaScript API，以及可持久化的 session 状态接到一个 agent loop 里，同时把模型访问放在你自己的后端代理之后。
+- 读取或操作当前标签页
+- 通过 Office.js 读取和修改文档状态
+- 调用内部 Web API，并结合当前页面上下文工作
+- 使用页面状态和业务专属工具完成任务
 
-## 这个项目适合什么场景
-
-当你需要在 Web 宿主环境里提供一个可交互的 agent，而且这个 agent 需要调用浏览器或宿主能力时，可以使用这个项目。例如：
-
-- 浏览器插件 agent，可以读取或操作当前标签页
-- Office Add-in agent，可以通过 Office.js 读取和修改文档状态
-- 公司门户里的智能助手，可以调用内部 Web API 并结合当前页面上下文工作
-- 产品内 agent，可以使用页面状态和业务专属工具完成任务
-
-如果你的 agent 只需要运行在服务端，这个仓库大概率不是最合适的抽象层。
+它的目标是把浏览器侧 tools、宿主暴露的 JavaScript API，以及可持久化的 session 状态接到一个 agent loop 里，同时把模型访问放在你自己的后端代理之后。如果你的 agent 只需要运行在服务端，这个仓库大概率不是最合适的抽象层。
 
 ## 核心能力
 
@@ -41,6 +37,7 @@
 当前推荐的主路径围绕以下对象展开：
 
 - `createAgentRuntime` 作为新 runtime 入口
+- `createOpenAiCompatibleLlmProvider`，从 `web-agent-runtime/openai-compatible` 导入，作为最快的本地验证 provider
 - `createAiSdkLlmProvider`，从 `web-agent-runtime/ai-sdk` 导入，作为对接后端模型访问的 provider
 - `IndexedDbAgentStorage` 作为浏览器侧存储实现
 - `createJsonSessionDataCodec` 作为默认 session document codec
@@ -74,6 +71,123 @@ npm test
 npm run typecheck
 ```
 
+## 开始使用
+
+如果你只是想先把一个浏览器侧 agent 跑起来，默认可以先用 OpenAI-compatible provider 做本地验证：
+
+```ts
+import { createAgentRuntime } from "web-agent-runtime";
+import { createOpenAiCompatibleLlmProvider } from "web-agent-runtime/openai-compatible";
+
+const OPENAI_API_KEY = "your-openai-api-key";
+
+const agent = await createAgentRuntime({
+  model: {
+    provider: "openai",
+    id: "gpt-4.1-mini",
+  },
+  llmProvider: createOpenAiCompatibleLlmProvider({
+    apiKey: OPENAI_API_KEY,
+  }),
+});
+
+await agent.prompt("Hello");
+```
+
+这条路径只适合本地实验和调试，不适合生产环境。生产环境里，仍然建议用 `createAiSdkLlmProvider()` 把模型请求收敛到你自己的后端代理。
+
+如果你不传 `storage`，runtime 默认会使用 `IndexedDbAgentStorage`，数据库名由 `DEFAULT_INDEXED_DB_STORAGE_NAME` 常量给出，当前默认值是 `"web-agent-runtime"`。如果你需要隔离不同业务或不同 agent 实例，可以显式传入自定义 storage：
+
+```ts
+import {
+  createAgentRuntime,
+  DEFAULT_INDEXED_DB_STORAGE_NAME,
+  IndexedDbAgentStorage,
+} from "web-agent-runtime";
+import { createOpenAiCompatibleLlmProvider } from "web-agent-runtime/openai-compatible";
+
+const OPENAI_API_KEY = "your-openai-api-key";
+
+console.log(DEFAULT_INDEXED_DB_STORAGE_NAME);
+
+const agent = await createAgentRuntime({
+  model: {
+    provider: "openai",
+    id: "gpt-4.1-mini",
+  },
+  llmProvider: createOpenAiCompatibleLlmProvider({
+    apiKey: OPENAI_API_KEY,
+  }),
+  storage: new IndexedDbAgentStorage({
+    dbName: "company-portal-agent",
+  }),
+});
+```
+
+如果你要接自己的后端代理，可以把 provider 换成 `createAiSdkLlmProvider()`：
+
+```ts
+import { createAgentRuntime } from "web-agent-runtime";
+import { createAiSdkLlmProvider } from "web-agent-runtime/ai-sdk";
+
+const agent = await createAgentRuntime({
+  model: {
+    provider: "company-proxy",
+    id: "claude-sonnet-4-5",
+  },
+  llmProvider: createAiSdkLlmProvider({
+    api: "/api/agent",
+  }),
+});
+```
+
+实例化完成后，最常用的是发起 prompt、管理 session，以及订阅 runtime 事件：
+
+```ts
+const unsubscribe = agent.subscribe((event) => {
+  if (event.type === "message_end") {
+    console.log("assistant message:", event.message);
+  }
+});
+
+const session = await agent.sessions.create({
+  title: "Quick Start Demo",
+});
+
+await agent.prompt("在 localStorage 里写入 demo:greeting=hello");
+await agent.followUp("读取刚才写入的值，并说明你做了什么");
+
+await agent.sessions.update(session.id, {
+  title: "Quick Start Demo Updated",
+});
+
+const sessions = await agent.sessions.list();
+console.log("all sessions:", sessions);
+
+const forked = await agent.sessions.fork({
+  sourceSessionId: session.id,
+  title: "Quick Start Branch",
+});
+
+await agent.sessions.open(forked.session.id);
+await agent.compact();
+
+unsubscribe();
+await agent.destroy();
+```
+
+几个常用 API 的用途如下：
+
+- `agent.prompt()`：发送一轮新的用户输入
+- `agent.continue()`：在已有上下文上继续生成，不追加新的用户消息
+- `agent.followUp()`：在当前轮结束后追加下一条跟进消息
+- `agent.steer()`：在运行中插入 steering 消息，尝试重定向当前过程
+- `agent.sessions.create()` / `open()` / `list()` / `update()` / `delete()` / `fork()`：管理会话及分支
+- `agent.subscribe()`：监听 runtime 事件流，例如消息结束、工具执行、session 切换
+- `agent.compact()`：压缩历史上下文，减少后续请求负担
+- `agent.setModel()` / `setThinkingLevel()` / `setSystemPrompt()`：动态调整运行参数
+- `agent.abort()` / `destroy()`：中止当前运行或销毁 runtime
+
 ## 最小示例
 
 ```ts
@@ -84,7 +198,9 @@ import {
   type RuntimeSessionData,
   type ToolDefinition,
 } from "web-agent-runtime";
-import { createAiSdkLlmProvider } from "web-agent-runtime/ai-sdk";
+import { createOpenAiCompatibleLlmProvider } from "web-agent-runtime/openai-compatible";
+
+const OPENAI_API_KEY = "your-openai-api-key";
 
 type HostContext = {
   apiBase: string;
@@ -121,14 +237,11 @@ const portalSearchTool: ToolDefinition<{ query: string }, { source: string }, un
 
 const runtime = await createAgentRuntime<HostContext, RuntimeSessionData>({
   model: {
-    provider: "company-proxy",
-    id: "claude-sonnet-4-5",
+    provider: "openai",
+    id: "gpt-4.1-mini",
   },
-  llmProvider: createAiSdkLlmProvider({
-    api: "/api/agent",
-    headers: {
-      "Content-Type": "application/json",
-    },
+  llmProvider: createOpenAiCompatibleLlmProvider({
+    apiKey: OPENAI_API_KEY,
   }),
   storage: new IndexedDbAgentStorage<RuntimeSessionData>({
     dbName: "company-portal-agent",
@@ -178,6 +291,7 @@ const runtime = await createAgentRuntime({
 根入口只保留 runtime-first 核心路径：
 
 - `createAgentRuntime`
+- `DEFAULT_INDEXED_DB_STORAGE_NAME`
 - `createJsonSessionDataCodec`
 - `createLocalStorageTools`，用于简单的浏览器侧 localStorage CRUD demo
 - `IndexedDbAgentStorage`
@@ -185,8 +299,8 @@ const runtime = await createAgentRuntime({
 
 可选 LLM 集成通过子入口单独暴露：
 
-- `web-agent-runtime/ai-sdk`：`createAiSdkLlmProvider`、`createAiSdkToolSet`
 - `web-agent-runtime/openai-compatible`：`createOpenAiCompatibleLlmProvider`
+- `web-agent-runtime/ai-sdk`：`createAiSdkLlmProvider`、`createAiSdkToolSet`
 - `web-agent-runtime/provider-utils`：`createResultStream`
 
 ## 仓库结构

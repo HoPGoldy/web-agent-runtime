@@ -6,7 +6,10 @@
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "paths": {
-      "web-agent-runtime": ["../src/index.ts"]
+      "web-agent-runtime": ["../src/index.ts"],
+      "web-agent-runtime/ai-sdk": ["../src/entries/ai-sdk.ts"],
+      "web-agent-runtime/openai-compatible": ["../src/entries/openai-compatible.ts"],
+      "web-agent-runtime/provider-utils": ["../src/entries/provider-utils.ts"]
     },
     "allowImportingTsExtensions": false,
     "resolveJsonModule": true,

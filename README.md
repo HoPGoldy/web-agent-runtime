@@ -41,6 +41,7 @@ If your agent only needs to run on the server, this repository is probably not t
 The main runtime path is centered around:
 
 - `createAgentRuntime` for the new runtime API
+- `createOpenAiCompatibleLlmProvider` from `web-agent-runtime/openai-compatible` as the fastest local-validation provider
 - `createAiSdkLlmProvider` from `web-agent-runtime/ai-sdk` for backend-connected model access
 - `IndexedDbAgentStorage` for browser-side session persistence
 - `createJsonSessionDataCodec` for storing runtime session documents
@@ -74,6 +75,76 @@ npm test
 npm run typecheck
 ```
 
+## Getting Started
+
+If you just want to boot a browser-side agent, the default local path is to start with the OpenAI-compatible provider:
+
+```ts
+import { createAgentRuntime } from "web-agent-runtime";
+import { createOpenAiCompatibleLlmProvider } from "web-agent-runtime/openai-compatible";
+
+const OPENAI_API_KEY = "your-openai-api-key";
+
+const agent = await createAgentRuntime({
+  model: {
+    provider: "openai",
+    id: "gpt-4.1-mini",
+  },
+  llmProvider: createOpenAiCompatibleLlmProvider({
+    apiKey: OPENAI_API_KEY,
+  }),
+});
+
+await agent.prompt("Hello");
+```
+
+This path is only suitable for local experimentation and debugging. For production, it is still better to use `createAiSdkLlmProvider()` so model access stays behind your backend proxy.
+
+If you omit `storage`, the runtime uses `IndexedDbAgentStorage` by default. The database name is exported as `DEFAULT_INDEXED_DB_STORAGE_NAME`, and currently defaults to `"web-agent-runtime"`. If you need isolated storage for different products or agent instances, pass an explicit storage instance:
+
+```ts
+import {
+  createAgentRuntime,
+  DEFAULT_INDEXED_DB_STORAGE_NAME,
+  IndexedDbAgentStorage,
+} from "web-agent-runtime";
+import { createOpenAiCompatibleLlmProvider } from "web-agent-runtime/openai-compatible";
+
+const OPENAI_API_KEY = "your-openai-api-key";
+
+console.log(DEFAULT_INDEXED_DB_STORAGE_NAME);
+
+const agent = await createAgentRuntime({
+  model: {
+    provider: "openai",
+    id: "gpt-4.1-mini",
+  },
+  llmProvider: createOpenAiCompatibleLlmProvider({
+    apiKey: OPENAI_API_KEY,
+  }),
+  storage: new IndexedDbAgentStorage({
+    dbName: "company-portal-agent",
+  }),
+});
+```
+
+If you want to route requests through your own backend, switch the provider to `createAiSdkLlmProvider()` instead:
+
+```ts
+import { createAgentRuntime } from "web-agent-runtime";
+import { createAiSdkLlmProvider } from "web-agent-runtime/ai-sdk";
+
+const agent = await createAgentRuntime({
+  model: {
+    provider: "company-proxy",
+    id: "claude-sonnet-4-5",
+  },
+  llmProvider: createAiSdkLlmProvider({
+    api: "/api/agent",
+  }),
+});
+```
+
 ## Minimal Example
 
 ```ts
@@ -84,7 +155,9 @@ import {
   type RuntimeSessionData,
   type ToolDefinition,
 } from "web-agent-runtime";
-import { createAiSdkLlmProvider } from "web-agent-runtime/ai-sdk";
+import { createOpenAiCompatibleLlmProvider } from "web-agent-runtime/openai-compatible";
+
+const OPENAI_API_KEY = "your-openai-api-key";
 
 type HostContext = {
   apiBase: string;
@@ -121,14 +194,11 @@ const portalSearchTool: ToolDefinition<{ query: string }, { source: string }, un
 
 const runtime = await createAgentRuntime<HostContext, RuntimeSessionData>({
   model: {
-    provider: "company-proxy",
-    id: "claude-sonnet-4-5",
+    provider: "openai",
+    id: "gpt-4.1-mini",
   },
-  llmProvider: createAiSdkLlmProvider({
-    api: "/api/agent",
-    headers: {
-      "Content-Type": "application/json",
-    },
+  llmProvider: createOpenAiCompatibleLlmProvider({
+    apiKey: OPENAI_API_KEY,
   }),
   storage: new IndexedDbAgentStorage<RuntimeSessionData>({
     dbName: "company-portal-agent",
@@ -178,6 +248,7 @@ The included demo can call an OpenAI-compatible endpoint directly from the brows
 The root entry exposes the runtime-first core surface:
 
 - `createAgentRuntime`
+- `DEFAULT_INDEXED_DB_STORAGE_NAME`
 - `createJsonSessionDataCodec`
 - `createLocalStorageTools` for simple browser-side localStorage CRUD demos
 - `IndexedDbAgentStorage`
@@ -185,8 +256,8 @@ The root entry exposes the runtime-first core surface:
 
 Optional LLM integrations are isolated behind subpath exports:
 
-- `web-agent-runtime/ai-sdk`: `createAiSdkLlmProvider`, `createAiSdkToolSet`
 - `web-agent-runtime/openai-compatible`: `createOpenAiCompatibleLlmProvider`
+- `web-agent-runtime/ai-sdk`: `createAiSdkLlmProvider`, `createAiSdkToolSet`
 - `web-agent-runtime/provider-utils`: `createResultStream`
 
 ## Repository Layout

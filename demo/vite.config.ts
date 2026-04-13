@@ -13,9 +13,24 @@ export default defineConfig({
     },
   },
   resolve: {
-    alias: {
-      "web-agent-runtime": fileURLToPath(new URL("../src/index.ts", import.meta.url)),
-    },
+    alias: [
+      {
+        find: /^web-agent-runtime$/,
+        replacement: fileURLToPath(new URL("../src/index.ts", import.meta.url)),
+      },
+      {
+        find: /^web-agent-runtime\/ai-sdk$/,
+        replacement: fileURLToPath(new URL("../src/entries/ai-sdk.ts", import.meta.url)),
+      },
+      {
+        find: /^web-agent-runtime\/openai-compatible$/,
+        replacement: fileURLToPath(new URL("../src/entries/openai-compatible.ts", import.meta.url)),
+      },
+      {
+        find: /^web-agent-runtime\/provider-utils$/,
+        replacement: fileURLToPath(new URL("../src/entries/provider-utils.ts", import.meta.url)),
+      },
+    ],
   },
   server: {
     port: 4179,

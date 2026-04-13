@@ -26,8 +26,23 @@
 
 默认页面：
 
-- `http://localhost:4179/`：textarea CRUD demo
-- `http://localhost:4179/local-storage-chat.html`：极简 localStorage chat demo
+- `http://localhost:4179/`：最小化 chat bot demo，agent 通过内置 localStorage tools 读写浏览器数据
+- `http://localhost:4179/local-storage-chat.html`：旧的 localStorage chat demo
+
+## Minimal chat demo
+
+根页面是一个纯净的聊天式 web app，不再演示 textarea 或 Outlook 场景，只证明一件事：
+
+- `web-agent-runtime` 可以在浏览器里驱动一个标准聊天 UI
+- agent 可以通过内置 `createLocalStorageTools()` 读写宿主状态
+- 对话、会话和工具结果都由 runtime 持续管理
+
+你可以直接输入类似下面的指令：
+
+- `把 profile 保存成 JSON，name 是 Wesley，city 是 Shanghai。`
+- `读取当前所有 key，并告诉我有哪些数据。`
+- `把 tasks 改成数组 ["ship demo", "write docs"]。`
+- `删除 note，如果不存在就告诉我。`
 
 ## DashScope 示例
 
