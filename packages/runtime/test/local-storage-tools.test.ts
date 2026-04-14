@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createLocalStorageTools } from "../src/index";
+import { createLocalStorageTools } from "../src/local-storage";
 
 type LocalStorageTool = ReturnType<typeof createLocalStorageTools>[number];
 

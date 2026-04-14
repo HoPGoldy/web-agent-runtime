@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import {
   createAgentRuntime,
-  createLocalStorageTools,
   type AgentRuntime,
   type AssistantMessage,
   type RuntimeEvent,
@@ -9,6 +8,7 @@ import {
   type SessionRecord,
   type ToolCallBlock,
 } from "web-agent-runtime";
+import { createLocalStorageTools } from "web-agent-runtime/local-storage";
 import { createUnsafeOpenAiProvider } from "web-agent-runtime/unsafe-openai";
 
 const OPENAI_KEY = import.meta.env.VITE_OPENAI_API_KEY?.trim() || "";

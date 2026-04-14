@@ -41,7 +41,8 @@ npm install web-agent-runtime
 你可以使用内置的 openai 兼容的 provider 来构建基础的 agent runtime：
 
 ```ts
-import { createAgentRuntime, createLocalStorageTools } from "web-agent-runtime";
+import { createAgentRuntime } from "web-agent-runtime";
+import { createLocalStorageTools } from "web-agent-runtime/local-storage";
 import { createUnsafeOpenAiProvider } from "web-agent-runtime/unsafe-openai";
 
 const OPENAI_API_KEY = "srk-xxx";

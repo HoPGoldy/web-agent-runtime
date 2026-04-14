@@ -11,6 +11,10 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
+    "./local-storage": {
+      "types": "./dist/local-storage.d.ts",
+      "import": "./dist/local-storage.js"
+    },
     "./unsafe-openai": {
       "types": "./dist/unsafe-openai.d.ts",
       "import": "./dist/unsafe-openai.js"

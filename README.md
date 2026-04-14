@@ -41,7 +41,8 @@ npm install web-agent-runtime
 You can use the built-in OpenAI-compatible provider to bootstrap a basic agent runtime:
 
 ```ts
-import { createAgentRuntime, createLocalStorageTools } from "web-agent-runtime";
+import { createAgentRuntime } from "web-agent-runtime";
+import { createLocalStorageTools } from "web-agent-runtime/local-storage";
 import { createUnsafeOpenAiProvider } from "web-agent-runtime/unsafe-openai";
 
 const OPENAI_API_KEY = "srk-xxx";
