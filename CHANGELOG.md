@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.2.2](https://github.com/HoPGoldy/web-agent-runtime/compare/v0.2.1...v0.2.2) (2026-04-14)
+
+
+### Bug Fixes
+
+* **publish:** add repository metadata for provenance ([0fc4580](https://github.com/HoPGoldy/web-agent-runtime/commit/0fc458094645bf696bf43e3636530920d6a93fb9))
+
 ## [0.2.1](https://github.com/HoPGoldy/web-agent-runtime/compare/v0.2.0...v0.2.1) (2026-04-14)
 
 
