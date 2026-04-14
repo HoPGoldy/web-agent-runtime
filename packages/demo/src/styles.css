@@ -1,0 +1,316 @@
+:root {
+  color: #1d2736;
+  background: #f5f7fb;
+  font-family: "PingFang SC", "Noto Sans SC", sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+button,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+.app-shell {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  height: 100vh;
+  overflow: hidden;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 18px;
+  background: #f0f3f8;
+  border-right: 1px solid #e2e8f0;
+  overflow: hidden;
+}
+
+.sidebar-title,
+.topbar h1,
+.empty-state h2,
+.tool-result-name {
+  margin: 0;
+  font-weight: 600;
+}
+
+.sidebar-button,
+.sample-item,
+.session-item,
+.composer button {
+  border: 1px solid #d8deea;
+  background: #fff;
+  color: inherit;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+
+.sidebar-button,
+.composer button {
+  padding: 12px 14px;
+}
+
+.sidebar-button:hover,
+.sample-item:hover,
+.session-item:hover,
+.composer button:hover {
+  border-color: #b8c4dd;
+}
+
+.sidebar-section {
+  min-height: 0;
+}
+
+.session-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.session-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  text-align: left;
+  width: 100%;
+}
+
+.session-item-title {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.session-item.is-active {
+  background: #e9eefc;
+  border-color: #c8d5ff;
+}
+
+.session-item small,
+.message-footer,
+.message-meta,
+.empty-state p {
+  color: #6e7c91;
+}
+
+.main-panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  padding: 24px 32px 12px;
+  flex: 0 0 auto;
+}
+
+.topbar h1 {
+  font-size: 28px;
+}
+
+.chat-panel {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  padding: 0 32px 24px;
+  overflow: hidden;
+}
+
+.message-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 8px 0 24px;
+}
+
+.empty-state {
+  max-width: 720px;
+  margin: 72px auto 0;
+  text-align: center;
+}
+
+.sample-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.sample-item {
+  padding: 14px 16px;
+  text-align: left;
+}
+
+.banner-error {
+  margin: 0 auto 16px;
+  max-width: 720px;
+  border: 1px solid #f0cdcd;
+  padding: 12px 14px;
+  background: #fff3f3;
+  color: #8e3c3c;
+}
+
+.message-row {
+  max-width: 840px;
+  margin: 0 auto 18px;
+}
+
+.user-row {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.message-bubble,
+.message-card,
+.tool-result,
+.composer {
+  border: 1px solid #e1e7f1;
+  background: #fff;
+}
+
+.message-bubble,
+.message-card,
+.tool-result {
+  padding: 14px 16px;
+}
+
+.user-bubble {
+  max-width: min(70%, 560px);
+  background: #ebf1ff;
+  border-color: #d4defa;
+}
+
+.message-card,
+.tool-result {
+  max-width: 720px;
+}
+
+.message-text {
+  white-space: pre-wrap;
+}
+
+.message-text p {
+  margin: 0 0 10px;
+}
+
+.message-text p:last-child {
+  margin-bottom: 0;
+}
+
+.tool-call-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.tool-pill {
+  padding: 5px 10px;
+  background: #eef2f8;
+  color: #516075;
+  font-size: 13px;
+}
+
+.message-footer {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+  font-size: 13px;
+}
+
+.message-error {
+  margin-top: 12px;
+  color: #8f4141;
+}
+
+.tool-result {
+  background: #fafbfd;
+}
+
+.tool-result.is-error {
+  border-color: #f1c8c8;
+  background: #fff8f8;
+}
+
+.composer {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  padding: 12px;
+  flex: 0 0 auto;
+}
+
+.composer textarea {
+  width: 100%;
+  min-height: 64px;
+  max-height: 180px;
+  resize: vertical;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: inherit;
+}
+
+.composer button {
+  min-width: 88px;
+}
+
+@media (max-width: 900px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    border-right: 0;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .topbar,
+  .chat-panel {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  .topbar {
+    padding-bottom: 12px;
+  }
+
+  .user-bubble,
+  .message-card,
+  .tool-result {
+    max-width: 100%;
+  }
+}
