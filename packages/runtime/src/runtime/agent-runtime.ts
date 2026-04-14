@@ -556,34 +556,6 @@ function appendMessageToSessionData(
   sessionData: RuntimeSessionData,
   message: AgentMessage,
 ) {
-  return createMessageEntryData(sessionData, message);
-}
-
-function createMessageEntryData(
-  sessionData: RuntimeSessionData,
-  message: AgentMessage,
-) {
-  return appendSessionMessage(sessionData, message);
-}
-
-function appendSessionMessage(
-  sessionData: RuntimeSessionData,
-  message: AgentMessage,
-) {
-  return createMessageSessionData(sessionData, message);
-}
-
-function createMessageSessionData(
-  sessionData: RuntimeSessionData,
-  message: AgentMessage,
-) {
-  return appendSessionEntryWithMessage(sessionData, message);
-}
-
-function appendSessionEntryWithMessage(
-  sessionData: RuntimeSessionData,
-  message: AgentMessage,
-) {
   return appendSessionEntry(
     sessionData,
     createMessageEntry({
