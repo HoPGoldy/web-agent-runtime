@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.2.1](https://github.com/HoPGoldy/web-agent-runtime/compare/v0.2.0...v0.2.1) (2026-04-14)
+
+
+### Bug Fixes
+
+* **ci:** specify pnpm version for publish workflow ([d07cbbb](https://github.com/HoPGoldy/web-agent-runtime/commit/d07cbbb0993567fc197426091351a6a47a68a273))
+
 ## 0.2.0 (2026-04-13)
 
 
