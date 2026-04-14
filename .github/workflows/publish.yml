@@ -25,6 +25,7 @@ jobs:
           registry-url: https://registry.npmjs.org
 
       - run: pnpm install --frozen-lockfile
-      - run: pnpm build
-      - run: pnpm test
+      - run: pnpm --filter web-agent-runtime build
+      - run: pnpm --filter web-agent-runtime test
       - run: npm publish --provenance --access public
+        working-directory: packages/runtime

@@ -1,57 +1,39 @@
 {
-  "name": "web-agent-runtime",
-  "version": "0.2.2",
+  "name": "web-agent-runtime-workspace",
+  "private": true,
   "packageManager": "pnpm@10.19.0",
-  "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "sideEffects": false,
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
-    },
-    "./unsafe-openai": {
-      "types": "./dist/unsafe-openai.d.ts",
-      "import": "./dist/unsafe-openai.js"
-    }
-  },
-  "files": [
-    "dist"
+  "workspaces": [
+    "packages/*"
   ],
   "scripts": {
-    "build": "tsup",
-    "dev": "tsup --watch",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage",
-    "typecheck": "tsc -p tsconfig.json",
-    "typecheck:test": "tsc -p tsconfig.test.json",
-    "release": "commit-and-tag-version",
-    "prepublishOnly": "npm run build"
-  },
-  "engines": {
-    "node": ">=18"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/HoPGoldy/web-agent-runtime"
-  },
-  "bugs": {
-    "url": "https://github.com/HoPGoldy/web-agent-runtime/issues"
-  },
-  "homepage": "https://github.com/HoPGoldy/web-agent-runtime#readme",
-  "publishConfig": {
-    "access": "public"
+    "dev": "concurrently -n runtime,demo -c blue,green \"pnpm --filter web-agent-runtime dev\" \"pnpm --filter web-agent-runtime-demo dev\"",
+    "start:runtime": "pnpm --filter web-agent-runtime dev",
+    "start:demo": "pnpm --filter web-agent-runtime-demo dev",
+    "build": "pnpm --filter web-agent-runtime build && pnpm --filter web-agent-runtime-demo build",
+    "typecheck": "pnpm --filter web-agent-runtime typecheck && pnpm --filter web-agent-runtime typecheck:test && pnpm --filter web-agent-runtime-demo typecheck",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "prepare": "node -e \"import('husky').then(m=>m.default()).catch(()=>{})\""
   },
   "devDependencies": {
-    "@types/node": "^25.5.2",
-    "@vitest/coverage-v8": "^4.1.3",
-    "commit-and-tag-version": "^12.7.1",
-    "fake-indexeddb": "^6.2.5",
-    "jsdom": "^29.0.2",
-    "tsup": "^8.4.0",
-    "typescript": "^6.0.2",
-    "vitest": "^4.1.3"
+    "@eslint/js": "^9.32.0",
+    "concurrently": "^9.2.1",
+    "eslint": "^9.32.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.3",
+    "eslint-plugin-react-refresh": "0.4.19",
+    "globals": "^16.3.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
+    "prettier": "^3.6.2",
+    "typescript-eslint": "^8.38.0"
+  },
+  "lint-staged": {
+    "**/*.{js,mjs,cjs,ts,tsx}": [
+      "eslint --fix"
+    ],
+    "**/*.{json,md,css,html,yml,yaml}": [
+      "prettier --write"
+    ]
   }
 }

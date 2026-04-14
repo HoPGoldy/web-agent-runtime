@@ -108,24 +108,24 @@ await agent.sessions.open(forked.session.id);
 
 ## Demo
 
-仓库内提供了一个本地 demo，位于 [`demo/`](./demo/)，用来验证：
+仓库内提供了一个本地 demo，位于 [`packages/demo/`](./packages/demo/)，用来验证：
 
 - 浏览器侧工具调用
 - runtime event 流
 - session 创建和持久化
 - 模型输出渲染
 
-启动方式见 [`demo/README.md`](./demo/README.md)。
+启动方式见 [`packages/demo/README.md`](./packages/demo/README.md)。
 
 ## 本地开发
 
 如果你是在当前仓库里本地开发：
 
 ```bash
-npm install
-npm run build
-npm test
-npm run typecheck
+pnpm install
+pnpm build
+pnpm --filter web-agent-runtime test
+pnpm typecheck
 ```
 
 ## 感谢

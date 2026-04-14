@@ -1,0 +1,57 @@
+{
+  "name": "web-agent-runtime",
+  "version": "0.2.2",
+  "packageManager": "pnpm@10.19.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./unsafe-openai": {
+      "types": "./dist/unsafe-openai.d.ts",
+      "import": "./dist/unsafe-openai.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc -p tsconfig.json",
+    "typecheck:test": "tsc -p tsconfig.test.json",
+    "release": "commit-and-tag-version",
+    "prepublishOnly": "pnpm build"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/HoPGoldy/web-agent-runtime"
+  },
+  "bugs": {
+    "url": "https://github.com/HoPGoldy/web-agent-runtime/issues"
+  },
+  "homepage": "https://github.com/HoPGoldy/web-agent-runtime#readme",
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.2",
+    "@vitest/coverage-v8": "^4.1.3",
+    "commit-and-tag-version": "^12.7.1",
+    "fake-indexeddb": "^6.2.5",
+    "jsdom": "^29.0.2",
+    "tsup": "^8.4.0",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.3"
+  }
+}

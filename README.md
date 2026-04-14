@@ -108,24 +108,24 @@ In addition, `web-agent-runtime` includes full support for core agent operations
 
 ## Demo
 
-This repository includes a local demo in [`demo/`](./demo/) for validating:
+This repository includes a local demo in [`packages/demo/`](./packages/demo/) for validating:
 
 - Browser-side tool calls
 - Runtime event streaming
 - Session creation and persistence
 - Model output rendering
 
-See [`demo/README.md`](./demo/README.md) for startup instructions.
+See [`packages/demo/README.md`](./packages/demo/README.md) for startup instructions.
 
 ## Local Development
 
 If you are developing inside this repository:
 
 ```bash
-npm install
-npm run build
-npm test
-npm run typecheck
+pnpm install
+pnpm build
+pnpm --filter web-agent-runtime test
+pnpm typecheck
 ```
 
 ## Acknowledgements
