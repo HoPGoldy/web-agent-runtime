@@ -1,6 +1,16 @@
 {
   "name": "web-agent-runtime",
   "version": "0.2.3",
+  "description": "A lightweight agent runtime for browser environments, designed for interactive client-side agent behavior in web products.",
+  "keywords": [
+    "agent",
+    "llm",
+    "ai",
+    "browser",
+    "runtime",
+    "openai",
+    "session"
+  ],
   "packageManager": "pnpm@10.19.0",
   "type": "module",
   "main": "./dist/index.js",
