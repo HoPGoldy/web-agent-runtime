@@ -7,3 +7,34 @@ All notable changes to this project will be documented in this file. See [commit
 ### Features
 
 - **runtime:** split local storage tools entry ([4f288d8](https://github.com/HoPGoldy/web-agent-runtime/commit/4f288d8dc9d2a81a2e84939bd910f130e68e0592))
+
+## [0.2.2](https://github.com/HoPGoldy/web-agent-runtime/compare/v0.2.1...v0.2.2) (2026-04-14)
+
+### Bug Fixes
+
+- **publish:** add repository metadata for provenance ([0fc4580](https://github.com/HoPGoldy/web-agent-runtime/commit/0fc458094645bf696bf43e3636530920d6a93fb9))
+
+## [0.2.1](https://github.com/HoPGoldy/web-agent-runtime/compare/v0.2.0...v0.2.1) (2026-04-14)
+
+### Bug Fixes
+
+- **ci:** specify pnpm version for publish workflow ([d07cbbb](https://github.com/HoPGoldy/web-agent-runtime/commit/d07cbbb0993567fc197426091351a6a47a68a273))
+
+## 0.2.0 (2026-04-13)
+
+### ⚠ BREAKING CHANGES
+
+- remove legacy agent facade and tool APIs
+
+- remove legacy agent facade and tool APIs ([9eb9bd3](https://github.com/HoPGoldy/web-agent-runtime/commit/9eb9bd32f92794d85346afd30f350dcc10e07a1e))
+
+### Features
+
+- add browser runtime demo and persistence updates ([f91ca6c](https://github.com/HoPGoldy/web-agent-runtime/commit/f91ca6c0b81023900204b9501894923d462f751f))
+- add localStorage demo tools ([1bd1bef](https://github.com/HoPGoldy/web-agent-runtime/commit/1bd1beffeb39f99ded8a5a9747b5b813279548fc))
+- add openai-compatible llm provider ([42ef0ec](https://github.com/HoPGoldy/web-agent-runtime/commit/42ef0ecf42e435369af0a5c3985ed56f5a01f02b))
+- add release build pipeline ([678d149](https://github.com/HoPGoldy/web-agent-runtime/commit/678d14923cd840046ddea11799ef0964e40c11a0))
+- default browser storage and simplify demo ([3ca091a](https://github.com/HoPGoldy/web-agent-runtime/commit/3ca091a55c02c694cbabee0e4d485a890c0eced3))
+- finalize browser sdk exports ([37359ca](https://github.com/HoPGoldy/web-agent-runtime/commit/37359ca8a1a908272283dfedce3d6b4f7526cd86))
+- implement browser runtime core ([85f7d0e](https://github.com/HoPGoldy/web-agent-runtime/commit/85f7d0ee7f9c99606a61364a6b376be3884cc84f))
+- make model provider optional ([cc44d56](https://github.com/HoPGoldy/web-agent-runtime/commit/cc44d56000e573cb472ca293e45fa62df7017561))
