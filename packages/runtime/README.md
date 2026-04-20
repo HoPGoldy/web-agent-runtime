@@ -8,23 +8,17 @@ English | [简体中文](./README.zh-CN.md)
 
 `web-agent-runtime` is an agent runtime for browser host environments, designed for building interactive client-side agent behavior in web products, similar to Claude Code.
 
-## Why This Exists
+## Who This Project Is Designed For
 
-Many people assume there is little value in building a Claude Code-like client-side agent for the web. For generic public websites, that is often a fair judgment. But in some scenarios, the browser is exactly the right place to run the agent, because that is where the capabilities are exposed. For example:
+If you need to complete any of the following, this project is designed for you:
 
-- Browser extensions
-- Office add-ins and other embedded productivity plugins
-- Internal portals, business back offices, and SaaS consoles
-- Product interfaces that expose host-specific JavaScript APIs
+- Implement an interactive agent in a browser environment
+- Develop a browser extension of the agent type
+- Develop plugins for specific ecosystems (e.g., Office)
+- Integrate an intelligent assistant into an internal web system
+- Want the agent assistant to access current page state and operate JS APIs
 
-This project is designed for those kinds of web host environments. When you need to provide an interactive agent that can directly access current page state, host context, and browser-side capabilities, this runtime is a suitable foundation. For example:
-
-- Read or manipulate the current tab
-- Read and modify document state through Office.js
-- Call internal web APIs together with current page context
-- Complete tasks using page state and product-specific tools
-
-Its goal is to connect browser-side tools, host-exposed JavaScript APIs, and persistent session state into an agent loop, while keeping model access behind your own backend proxy. If your agent only needs to run on the server, this repository is probably not the right abstraction layer.
+At its core, this project implements a pure JavaScript agent runtime framework and provides built-in features (such as session management and context operations), so you can focus on agent behavior design and tool integration without building the entire agent loop from scratch.
 
 ## Core Capabilities
 
