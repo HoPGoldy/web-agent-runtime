@@ -1,5 +1,9 @@
 # web-agent-runtime
 
+[![npm version](https://img.shields.io/npm/v/web-agent-runtime)](https://www.npmjs.com/package/web-agent-runtime)
+[![npm downloads](https://img.shields.io/npm/dm/web-agent-runtime)](https://www.npmjs.com/package/web-agent-runtime)
+[![Publish to npm](https://github.com/HoPGoldy/web-agent-runtime/actions/workflows/publish.yml/badge.svg)](https://github.com/HoPGoldy/web-agent-runtime/actions/workflows/publish.yml)
+
 English | [简体中文](./README.zh-CN.md)
 
 `web-agent-runtime` is an agent runtime for browser host environments, designed for building interactive client-side agent behavior in web products, similar to Claude Code.
@@ -26,6 +30,7 @@ Its goal is to connect browser-side tools, host-exposed JavaScript APIs, and per
 
 - 🌐 A pure JavaScript agent runtime for browser environments, with core agent loop, event system, and session management capabilities
 - 📦 Zero runtime dependencies in the core package
+- 🖼️ UI-agnostic and framework-agnostic: use it in any frontend framework or directly with vanilla JavaScript
 - 💾 Built-in session CRUD, backed by IndexedDB for browser-side persistence
 - 🧭 Full context operations: prompt, continue, followUp, steer, fork, compaction, abort
 - 🧩 Fully customizable model access, storage, and tool definitions through standard interfaces

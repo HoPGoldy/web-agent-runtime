@@ -1,31 +1,30 @@
 # web-agent-runtime
 
+[![npm version](https://img.shields.io/npm/v/web-agent-runtime)](https://www.npmjs.com/package/web-agent-runtime)
+[![npm downloads](https://img.shields.io/npm/dm/web-agent-runtime)](https://www.npmjs.com/package/web-agent-runtime)
+[![Publish to npm](https://github.com/HoPGoldy/web-agent-runtime/actions/workflows/publish.yml/badge.svg)](https://github.com/HoPGoldy/web-agent-runtime/actions/workflows/publish.yml)
+
 [English](./README.md) | 简体中文
 
 `web-agent-runtime` 是一个面向浏览器宿主环境的 agent runtime，适合在 Web 场景里实现类似 Claude Code 的交互式客户端 agent 行为。
 
-## 为什么会有这个项目
+## 本项目是给谁设计的
 
-很多人会觉得，在 Web 里做一个类似 Claude Code 的客户端 agent 没什么意义。对于普通公开网站，这个判断很多时候并不算错；但在一些特殊场景里，浏览器本身就是最合适的 agent 运行位置，因为能力就暴露在这里。例如：
+如果你需要完成如下任务，那么本项目就是为你设计的：
 
-- 浏览器插件
-- Office 插件和其他嵌入式生产力插件
-- 公司内部门户、业务后台、SaaS 控制台
-- 暴露了宿主专有 JavaScript API 的产品界面
+- 在浏览器环境里实现一个交互式 agent
+- 开发一个 agent 类型的浏览器插件
+- 为指定生态开发插件（如 office）
+- 在公司内部 web 系统中集成智能助手
+- 希望 agent 助手可以访问当前页面状态和操作 JS API
 
-这个项目就是为这类 Web 宿主环境设计的。当你需要提供一个可交互的 agent，并且让它直接接触当前页面状态、宿主上下文和浏览器侧能力时，可以使用这个 runtime，例如：
-
-- 读取或操作当前标签页
-- 通过 Office.js 读取和修改文档状态
-- 调用内部 Web API，并结合当前页面上下文工作
-- 使用页面状态和业务专属工具完成任务
-
-它的目标是把浏览器侧 tools、宿主暴露的 JavaScript API，以及可持久化的 session 状态接到一个 agent loop 里，同时把模型访问放在你自己的后端代理之后。如果你的 agent 只需要运行在服务端，这个仓库大概率不是最合适的抽象层。
+从本质上来讲，这个项目实现了一个纯 js 的 agent 运行框架，并提供了一些内置功能（如 session 管理、上下文操作等），让你可以专注于 agent 行为设计和工具集成，而不需要从零搭建整个 agent loop。
 
 ## 核心能力
 
 - 🌐 面向浏览器开发的纯 js agent runtime：提供了 agent loop、事件系统、session 管理等核心功能
 - 📦 核心包零运行时依赖
+- 🖼️ UI 无关，框架无关：你可以在任何前端框架里使用它，也可以直接用原生 js
 - 💾 内置 session 增删改查：基于 IndexedDB 的浏览器端 session 持久化
 - 🧭 完备的上下文操作：prompt、continue、followUp、steer、fork、compaction、abort
 - 🧩 完全可定制：模型调用、数据存储、工具定义均通过标准的 interface 实现。
