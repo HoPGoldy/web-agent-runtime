@@ -12,6 +12,9 @@ import {
   createMessageEntry,
   createRuntimeSessionData,
   appendSessionEntry,
+  undoToEntry,
+  findRedoTarget,
+  redoToLatest,
 } from "../session/runtime-session-data";
 import type {
   AgentMessage,
@@ -40,6 +43,7 @@ import {
   type PromptInput,
   type RuntimeEvent,
   type RuntimeState,
+  type UndoResult,
 } from "../types/runtime";
 import { AgentLoopEngine } from "./agent-loop";
 import { compactRuntimeSession } from "./compaction";
@@ -429,6 +433,36 @@ class BrowserAgentRuntime<
     this._state.status = "destroyed";
     this.emit({ type: "destroyed" });
     this.listeners.clear();
+  }
+
+  async undo(messageId: string): Promise<UndoResult> {
+    this.ensureNotDestroyed();
+    if (!this._state.session) {
+      throw new Error("No active session");
+    }
+
+    const result = undoToEntry(this.sessionData, messageId);
+    this.sessionData = result.data;
+    await this.persistSessionData();
+    this.rebuildState();
+    this.emit({
+      type: "undo_applied",
+      messageId,
+      userMessage: result.userMessage,
+    });
+    return { userMessage: result.userMessage };
+  }
+
+  async redo(): Promise<void> {
+    this.ensureNotDestroyed();
+    if (!this._state.session) {
+      throw new Error("No active session");
+    }
+
+    this.sessionData = redoToLatest(this.sessionData);
+    await this.persistSessionData();
+    this.rebuildState();
+    this.emit({ type: "redo_applied" });
   }
 
   setModel(model: ModelRef) {

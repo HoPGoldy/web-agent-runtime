@@ -96,7 +96,7 @@ describe("runtime session graph", () => {
     });
 
     expect(fullSession.headEntryId).toBe("entry-assistant");
-    expect(view.messages).toEqual([
+    expect(view.messages).toMatchObject([
       createUserMessage("user-1", "hello", 1),
       createAssistantMessage("model-b", "world", 2),
     ]);

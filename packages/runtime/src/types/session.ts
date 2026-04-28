@@ -187,6 +187,8 @@ export type ToolResultContentBlock = TextBlock | ImageBlock;
 export interface UserMessage {
   /** Identifies this record as a user message. */
   role: "user";
+  /** Stable identifier assigned by the runtime when the message is part of a session. */
+  id?: string;
   /** User-authored content, either plain text or structured blocks. */
   content: string | UserContentBlock[];
   /** Unix timestamp in milliseconds for when the message was created. */
@@ -201,6 +203,8 @@ export interface UserMessage {
 export interface AssistantMessage {
   /** Identifies this record as an assistant message. */
   role: "assistant";
+  /** Stable identifier assigned by the runtime when the message is part of a session. */
+  id?: string;
   /** Structured assistant output blocks, including text, thinking, images, and tool calls. */
   content: AssistantContentBlock[];
   /** Reason the provider ended generation. */
@@ -223,6 +227,8 @@ export interface AssistantMessage {
 export interface ToolResultMessage<TDetails = unknown> {
   /** Identifies this record as a tool result message. */
   role: "toolResult";
+  /** Stable identifier assigned by the runtime when the message is part of a session. */
+  id?: string;
   /** Tool call id that this result satisfies. */
   toolCallId: string;
   /** Tool name that produced the result. */
@@ -248,6 +254,8 @@ export interface CustomMessage<
 > {
   /** Identifies this record as a host-defined custom message. */
   role: "custom";
+  /** Stable identifier assigned by the runtime when the message is part of a session. */
+  id?: string;
   /** Application-defined custom subtype. */
   customType: TType;
   /** Content rendered or stored for the custom message. */

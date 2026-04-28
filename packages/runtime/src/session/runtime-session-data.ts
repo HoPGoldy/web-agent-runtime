@@ -11,6 +11,7 @@ import type {
   RuntimeSessionView,
   SessionEntry,
   ThinkingLevelChangeEntry,
+  UserMessage,
 } from "../types/session";
 import { cloneSerializableValue } from "../utils/runtime-compat";
 
@@ -199,9 +200,12 @@ export function buildRuntimeSessionView(
 
   for (const entry of lineage) {
     switch (entry.type) {
-      case "message":
-        messages = [...messages, cloneValue(entry.message)];
+      case "message": {
+        const msg = cloneValue(entry.message);
+        msg.id = entry.id;
+        messages = [...messages, msg];
         break;
+      }
       case "model_change":
         if (isModelRefRecord(entry.model)) {
           model = cloneValue(entry.model);
@@ -299,4 +303,99 @@ export function isRuntimeSessionData(
         return false;
     }
   });
+}
+
+/**
+ * Finds the entry for a given message id (which is the entry id injected
+ * into message.id by buildRuntimeSessionView). Validates that the entry
+ * is a MessageEntry whose message has role "user".
+ */
+export function findUserMessageEntry(
+  data: RuntimeSessionData,
+  messageId: string,
+): MessageEntry {
+  const entry = data.entries.find((e) => e.id === messageId);
+  if (!entry) {
+    throw new Error(`Session entry not found: ${messageId}`);
+  }
+
+  if (entry.type !== "message") {
+    throw new Error(
+      `Entry ${messageId} is not a message entry (type: ${entry.type})`,
+    );
+  }
+
+  if (entry.message.role !== "user") {
+    throw new Error(
+      `Entry ${messageId} is not a user message (role: ${entry.message.role})`,
+    );
+  }
+
+  return entry;
+}
+
+/**
+ * Moves the session head to the parent of the specified user message entry,
+ * effectively undoing the user message and everything after it.
+ * Returns the updated session data and the undone user message.
+ */
+export function undoToEntry(
+  data: RuntimeSessionData,
+  messageId: string,
+): { data: RuntimeSessionData; userMessage: UserMessage } {
+  const entry = findUserMessageEntry(data, messageId);
+
+  return {
+    data: {
+      ...data,
+      headEntryId: entry.parentId,
+    },
+    userMessage: entry.message as UserMessage,
+  };
+}
+
+/**
+ * Finds the redo target from the current head by walking forward along
+ * the unique child path to the leaf. Returns null if:
+ * - Already at the leaf (no children from head)
+ * - A branch point is encountered (multiple children)
+ */
+export function findRedoTarget(data: RuntimeSessionData): string | null {
+  const childrenMap = new Map<string | null, string[]>();
+  for (const entry of data.entries) {
+    const list = childrenMap.get(entry.parentId) ?? [];
+    list.push(entry.id);
+    childrenMap.set(entry.parentId, list);
+  }
+
+  let current = data.headEntryId;
+
+  while (true) {
+    const children = childrenMap.get(current) ?? [];
+    if (children.length === 0) {
+      // Reached leaf — if it's the same as head, nothing to redo
+      return current === data.headEntryId ? null : current;
+    }
+    if (children.length > 1) {
+      // Branch point — redo is ambiguous
+      return null;
+    }
+    current = children[0];
+  }
+}
+
+/**
+ * Moves the session head to the redo target (leaf of the unique forward path).
+ * Throws if no redo target is available.
+ */
+export function redoToLatest(data: RuntimeSessionData): RuntimeSessionData {
+  const target = findRedoTarget(data);
+  if (!target) {
+    throw new Error("No redo target available");
+  }
+
+  return {
+    ...data,
+    headEntryId: target,
+  };
 }

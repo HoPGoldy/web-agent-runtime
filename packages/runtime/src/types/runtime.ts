@@ -17,6 +17,7 @@ import type {
   StorageProvider,
   ToolCallBlock,
   UpdateSessionInput,
+  UserMessage,
 } from "./session";
 
 /**
@@ -139,6 +140,14 @@ export interface RuntimeState {
 }
 
 /**
+ * Result returned after successfully undoing a user message.
+ */
+export interface UndoResult {
+  /** The user message that was undone, for UI to refill the input box. */
+  userMessage: UserMessage;
+}
+
+/**
  * Events emitted by the lower-level runtime implementation.
  */
 export type RuntimeEvent =
@@ -186,6 +195,8 @@ export type RuntimeEvent =
     }
   | { type: "compaction_start"; sessionId: string }
   | { type: "compaction_end"; sessionId: string; result: CompactionResult }
+  | { type: "undo_applied"; messageId: string; userMessage: UserMessage }
+  | { type: "redo_applied" }
   | { type: "destroyed" };
 
 /**
@@ -268,6 +279,10 @@ export interface AgentRuntime {
   abort(): void;
   /** Tears down the runtime and releases any resources it holds. */
   destroy(): Promise<void>;
+  /** Undoes a user message and all subsequent messages, returning the undone user message. */
+  undo(messageId: string): Promise<UndoResult>;
+  /** Redoes to the latest point in the current branch, if possible. */
+  redo(): Promise<void>;
   /** Replaces the active model selection. */
   setModel(model: ModelRef): void;
   /** Updates the requested reasoning intensity. */

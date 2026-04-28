@@ -230,7 +230,7 @@ describe("agent runtime", () => {
     await runtime.prompt("hello");
 
     expect(streamedTexts).toContain("streamed");
-    expect(runtime.state.messages.at(-1)).toEqual(
+    expect(runtime.state.messages.at(-1)).toMatchObject(
       createAssistantTextMessage("streamed", 3),
     );
   });
