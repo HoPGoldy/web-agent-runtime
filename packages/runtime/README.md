@@ -117,6 +117,29 @@ This repository includes a local demo in [`packages/demo/`](https://github.com/H
 
 See [`packages/demo/README.md`](https://github.com/HoPGoldy/web-agent-runtime/tree/main/packages/demo/README.md) for startup instructions.
 
+## Multi-Session Concurrency
+
+`web-agent-runtime` supports running multiple sessions at the same time.
+
+- Recommended pattern: create one runtime instance per active chat tab/window, and open one session in each runtime.
+- Different `sessionId` values can run concurrently without interfering with each other.
+- For the same `sessionId`, use a single-writer pattern (only one runtime instance sends writes) to avoid revision conflicts.
+
+Example:
+
+```ts
+const runtimeA = await createAgentRuntime(options);
+const runtimeB = await createAgentRuntime(options);
+
+await runtimeA.sessions.open("session-a");
+await runtimeB.sessions.open("session-b");
+
+await Promise.all([
+  runtimeA.prompt("Continue task A"),
+  runtimeB.prompt("Continue task B"),
+]);
+```
+
 ## Local Development
 
 If you are developing inside this repository:

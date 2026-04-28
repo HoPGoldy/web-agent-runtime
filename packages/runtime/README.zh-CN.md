@@ -117,6 +117,29 @@ await agent.sessions.open(forked.session.id);
 
 启动方式见 [`packages/demo/README.md`](https://github.com/HoPGoldy/web-agent-runtime/tree/main/packages/demo/README.md)。
 
+## 多 Session 并发使用
+
+`web-agent-runtime` 支持多个 session 同时运行。
+
+- 推荐方式：每个会话窗口（或 tab）使用一个独立 runtime 实例，并在该实例中打开一个 session。
+- 不同 `sessionId` 可以并发运行，互不干扰。
+- 同一个 `sessionId` 建议采用单写者模式（仅一个 runtime 发起写入），避免 revision conflict。
+
+示例：
+
+```ts
+const runtimeA = await createAgentRuntime(options);
+const runtimeB = await createAgentRuntime(options);
+
+await runtimeA.sessions.open("session-a");
+await runtimeB.sessions.open("session-b");
+
+await Promise.all([
+  runtimeA.prompt("继续处理任务 A"),
+  runtimeB.prompt("继续处理任务 B"),
+]);
+```
+
 ## 本地开发
 
 如果你是在当前仓库里本地开发：
