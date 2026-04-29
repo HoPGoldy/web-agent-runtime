@@ -26,7 +26,7 @@ At its core, this project implements a pure JavaScript agent runtime framework a
 - 📦 Zero runtime dependencies in the core package
 - 🖼️ UI-agnostic and framework-agnostic: use it in any frontend framework or directly with vanilla JavaScript
 - 💾 Built-in session CRUD, backed by IndexedDB for browser-side persistence
-- 🧭 Full context operations: prompt, continue, followUp, steer, fork, compaction, abort
+- 🧭 Full context operations: prompt、undo、redo、followUp、steer、fork、compaction、abort...
 - 🧩 Fully customizable model access, storage, and tool definitions through standard interfaces
 
 ## Installation

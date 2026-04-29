@@ -26,7 +26,7 @@
 - 📦 核心包零运行时依赖
 - 🖼️ UI 无关，框架无关：你可以在任何前端框架里使用它，也可以直接用原生 js
 - 💾 内置 session 增删改查：基于 IndexedDB 的浏览器端 session 持久化
-- 🧭 完备的上下文操作：prompt、continue、followUp、steer、fork、compaction、abort
+- 🧭 完备的上下文操作：prompt、undo、redo、followUp、steer、fork、compaction、abort...
 - 🧩 完全可定制：模型调用、数据存储、工具定义均通过标准的 interface 实现。
 
 ## 安装
