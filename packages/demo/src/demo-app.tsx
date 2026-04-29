@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   createAgentRuntime,
   type AgentRuntime,
@@ -128,6 +128,7 @@ export const DemoApp = () => {
   const [sessions, setSessions] = useState<SessionRecord[]>([]);
   const [input, setInput] = useState("");
   const [bootError, setBootError] = useState<string | null>(null);
+  const [undonePreview, setUndonePreview] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -180,6 +181,10 @@ export const DemoApp = () => {
       }
 
       if (event.type === "agent_end") {
+        void refreshSessions(runtime);
+      }
+
+      if (event.type === "undo_applied" || event.type === "redo_applied") {
         void refreshSessions(runtime);
       }
     };
@@ -300,6 +305,35 @@ export const DemoApp = () => {
     });
   };
 
+  const handleUndo = useCallback(
+    async (messageId: string) => {
+      if (!agent || isBusy) {
+        return;
+      }
+
+      await runSafely(async () => {
+        const result = await agent.undo(messageId);
+        const content = result.userMessage.content;
+        const text = typeof content === "string" ? content : "";
+        setInput(text);
+        setUndonePreview(text.length > 40 ? `${text.slice(0, 40)}...` : text);
+      });
+    },
+    [agent, isBusy],
+  );
+
+  const handleRedo = useCallback(async () => {
+    if (!agent || isBusy) {
+      return;
+    }
+
+    await runSafely(async () => {
+      await agent.redo();
+      setInput("");
+      setUndonePreview(null);
+    });
+  }, [agent, isBusy]);
+
   return (
     <div className="app-shell">
       <aside className="sidebar">
@@ -367,11 +401,23 @@ export const DemoApp = () => {
             ) : null}
 
             {renderedMessages.map((message, index) => {
-              const key = `message-${index}-${message.role}`;
+              const key = message.id ?? `message-${index}-${message.role}`;
 
               if (message.role === "user") {
                 return (
                   <article key={key} className="message-row user-row">
+                    {message.id ? (
+                      <div className="user-actions">
+                        <button
+                          className="action-pill"
+                          onClick={() => void handleUndo(message.id!)}
+                          disabled={isBusy}
+                          title="Undo this message"
+                        >
+                          ↩ Undo
+                        </button>
+                      </div>
+                    ) : null}
                     <div className="message-bubble user-bubble">
                       {readTextContent(message.content)}
                     </div>
@@ -447,6 +493,18 @@ export const DemoApp = () => {
               );
             })}
           </div>
+
+          {runtimeState?.canRedo ? (
+            <div className="redo-bar">
+              <button
+                className="redo-bar-button"
+                onClick={() => void handleRedo()}
+                disabled={isBusy}
+              >
+                ↻ Redo{undonePreview ? ` “${undonePreview}”` : ""}
+              </button>
+            </div>
+          ) : null}
 
           <div className="composer">
             <textarea

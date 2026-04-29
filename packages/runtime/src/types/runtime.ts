@@ -137,6 +137,8 @@ export interface RuntimeState {
   queuedFollowUpMessages: AgentMessage[];
   /** Last runtime error message, when the status is error. */
   error?: string;
+  /** Whether redo is available (undo was performed and no branch divergence). */
+  canRedo: boolean;
 }
 
 /**

@@ -190,7 +190,8 @@ button {
 
 .user-row {
   display: flex;
-  justify-content: flex-end;
+  flex-direction: column;
+  align-items: flex-end;
 }
 
 .message-bubble,
@@ -211,6 +212,45 @@ button {
   max-width: min(70%, 560px);
   background: #ebf1ff;
   border-color: #d4defa;
+}
+
+.user-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.action-pill {
+  padding: 3px 10px;
+  border: 1px solid #d8deea;
+  border-radius: 12px;
+  background: #fff;
+  color: #6e7c91;
+  font-size: 12px;
+  line-height: 1.4;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.action-pill:hover {
+  border-color: #b8c4dd;
+  background: #ebf1ff;
+  color: #3b5998;
+}
+
+.action-pill:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.action-pill:disabled:hover {
+  border-color: #d8deea;
+  background: #fff;
+  color: #6e7c91;
 }
 
 .message-card,
@@ -271,6 +311,40 @@ button {
   gap: 12px;
   padding: 12px;
   flex: 0 0 auto;
+}
+
+.redo-bar {
+  display: flex;
+  justify-content: center;
+  padding: 0 12px 8px;
+  flex: 0 0 auto;
+}
+
+.redo-bar-button {
+  padding: 6px 16px;
+  border: 1px solid #d4defa;
+  border-radius: 16px;
+  background: #f0f4ff;
+  color: #3b5998;
+  font-size: 13px;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.redo-bar-button:hover {
+  background: #e2eaff;
+  border-color: #b8c4dd;
+}
+
+.redo-bar-button:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 
 .composer textarea {

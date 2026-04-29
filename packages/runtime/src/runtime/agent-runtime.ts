@@ -79,6 +79,7 @@ function createEmptyState(options: {
     pendingToolCallIds: [],
     queuedSteeringMessages: [],
     queuedFollowUpMessages: [],
+    canRedo: false,
   };
 }
 
@@ -554,6 +555,7 @@ class BrowserAgentRuntime<
     this._state.messages = view.messages;
     this._state.model = view.model;
     this._state.thinkingLevel = view.thinkingLevel;
+    this._state.canRedo = findRedoTarget(this.sessionData) !== null;
     this.emitStateChanged();
   }
 
