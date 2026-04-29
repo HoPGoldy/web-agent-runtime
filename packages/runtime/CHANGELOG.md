@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.2.5](https://github.com/HoPGoldy/web-agent-runtime/compare/v0.2.4...v0.2.5) (2026-04-29)
+
+### Features
+
+- 升级 demo 支持 undo/redo，优化按钮布局 ([948387e](https://github.com/HoPGoldy/web-agent-runtime/commit/948387ea0db0d64b7cdf6c451ce8283b370eeb00))
+- 实现 undo/redo 机制，为 AgentMessage 添加 id 字段 ([f6d5f11](https://github.com/HoPGoldy/web-agent-runtime/commit/f6d5f1190c365e1ed4cee4fb652624ac8dd8b1a1))
+
 ## [0.2.4](https://github.com/HoPGoldy/web-agent-runtime/compare/v0.2.3...v0.2.4) (2026-04-20)
 
 ## [0.2.3](https://github.com/HoPGoldy/web-agent-runtime/compare/v0.2.2...v0.2.3) (2026-04-20)

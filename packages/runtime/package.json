@@ -1,6 +1,6 @@
 {
   "name": "web-agent-runtime",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "A lightweight agent runtime for browser environments, designed for interactive client-side agent behavior in web products.",
   "keywords": [
     "agent",
